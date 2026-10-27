@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDF 합치기</title>
+  <!-- 클라이언트 사이드 PDF 조작을 위한 유일한 의존성 -->
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --border: #e2e8f0;
+      --border-focus: #3b82f6;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --badge-bg: #eff6ff;
+      --danger: #ef4444;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.5;
+      padding: 40px 16px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .wrapper {
+      width: 100%;
+      max-width: 680px;
+    }
+
+    header {
+      margin-bottom: 24px;
+    }
+
+    .tool-badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .desc {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+
+    .step-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .step-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .step-num {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    .step-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .btn-clear {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    .btn-clear:hover { color: var(--danger); }
+
+    .dropzone {
+      border: 2px dashed #cbd5e1;
+      border-radius: 12px;
+      padding: 30px 20px;
+      text-align: center;
+      cursor: pointer;
+      background: #fafafa;
+      transition: border-color 0.15s, background-color 0.15s;
+    }
+
+    .dropzone.dragover {
+      border-color: var(--primary);
+      background-color: var(--badge-bg);
+    }
+
+    .dropzone svg {
+      width: 32px;
+      height: 32px;
+      fill: none;
+      stroke: #94a3b8;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      margin-bottom: 8px;
+    }
+
+    .dropzone-text {
+      font-size: 0.95rem;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .dropzone-sub {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    input[type="file"] { display: none; }
+
+    .queue-list {
+      margin-top: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .queue-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.85rem;
+    }
+
+    .queue-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .order-idx {
+      font-weight: 700;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      width: 18px;
+    }
+
+    .queue-name {
+      font-weight: 500;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--text);
+    }
+
+    .queue-size {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      flex-shrink: 0;
+    }
+
+    .queue-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .btn-icon {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      width: 26px;
+      height: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 0.75rem;
+      color: #475569;
+    }
+
+    .btn-icon:hover { background: #f1f5f9; }
+    .btn-icon.del:hover { color: var(--danger); border-color: #fca5a5; }
+
+    .btn-action {
+      width: 100%;
+      height: 48px;
+      background: var(--primary);
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+    }
+
+    .btn-action:hover { background: var(--primary-hover); }
+    .btn-action:disabled { background: #94a3b8; cursor: not-allowed; }
+
+    .result-box {
+      display: none;
+      margin-top: 20px;
+      padding: 16px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .download-btn {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 600;
+      padding: 8px 16px;
+      border-radius: 6px;
+      background: var(--badge-bg);
+      transition: background 0.15s;
+    }
+
+    .download-btn:hover { background: #dbeafe; }
+  </style>
+</head>
+<body>
+
+<div class="wrapper">
+  <header>
+    <div class="tool-badge">PDF TOOL</div>
+    <h1>PDF 합치기</h1>
+    <div class="desc">여러 PDF를 순서대로 병합합니다. 파일은 브라우저 밖으로 전송되지 않습니다.</div>
+  </header>
+
+  <div class="card">
+    <div class="step-header">
+      <div class="step-left">
+        <span class="step-num">01</span>
+        <h2 class="step-title">파일 대기열 (<span id="queueCount">0</span>개)</h2>
+      </div>
+      <button class="btn-clear" id="clearBtn" style="display: none;">전체 비우기</button>
+    </div>
+    
+    <div class="dropzone" id="dropzone">
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <div class="dropzone-text">PDF 파일 추가 (클릭 또는 드래그 앤 드롭)</div>
+      <div class="dropzone-sub">다른 폴더에 있는 파일들을 순서에 상관없이 계속 추가할 수 있습니다</div>
+      <input type="file" id="fileInput" multiple accept="application/pdf">
+    </div>
+
+    <div class="queue-list" id="queueList"></div>
+  </div>
+
+  <div class="card">
+    <div class="step-header">
+      <div class="step-left">
+        <span class="step-num">02</span>
+        <h2 class="step-title">병합 실행</h2>
+      </div>
+    </div>
+    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
+      대기열에 배치된 위에서 아래 순서대로 문서가 합쳐집니다. 암호가 걸린 PDF는 지원하지 않습니다.
+    </p>
+    <button class="btn-action" id="mergeBtn" disabled>PDF 하나로 합치기</button>
+  </div>
+
+  <div class="card" id="resultCard" style="display: none;">
+    <div class="step-header">
+      <div class="step-left">
+        <span class="step-num">03</span>
+        <h2 class="step-title">완료</h2>
+      </div>
+    </div>
+    <div class="result-box" id="resultBox" style="display: flex;">
+      <div>
+        <div id="resultName" style="font-weight: 600;">merged.pdf</div>
+        <div id="resultMeta" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;"></div>
+      </div>
+      <a class="download-btn" id="downloadBtn" download="merged.pdf">다운로드</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  const fileInput = document.getElementById('fileInput');
+  const dropzone = document.getElementById('dropzone');
+  const queueList = document.getElementById('queueList');
+  const queueCount = document.getElementById('queueCount');
+  const clearBtn = document.getElementById('clearBtn');
+  const mergeBtn = document.getElementById('mergeBtn');
+  const resultCard = document.getElementById('resultCard');
+  const resultBox = document.getElementById('resultBox');
+  const resultMeta = document.getElementById('resultMeta');
+  const downloadBtn = document.getElementById('downloadBtn');
+
+  let fileQueue = [];
+
+  dropzone.addEventListener('click', () => {
+    fileInput.value = '';
+    fileInput.click();
+  });
+
+  dropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dropzone.classList.add('dragover');
+  });
+
+  dropzone.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dropzone.classList.remove('dragover');
+  });
+
+  dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dropzone.classList.remove('dragover');
+    if (e.dataTransfer && e.dataTransfer.files.length > 0) {
+      appendFiles(e.dataTransfer.files);
+    }
+  });
+
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      appendFiles(e.target.files);
+    }
+  });
+
+  clearBtn.addEventListener('click', () => {
+    fileQueue = [];
+    updateQueueUI();
+  });
+
+  function appendFiles(files) {
+    const pdfs = Array.from(files).filter(file => {
+      return file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+    });
+
+    if (pdfs.length === 0) return;
+
+    pdfs.forEach(file => fileQueue.push(file));
+    updateQueueUI();
+  }
+
+  function moveItem(index, direction) {
+    const targetIdx = index + direction;
+    if (targetIdx < 0 || targetIdx >= fileQueue.length) return;
+    const temp = fileQueue[index];
+    fileQueue[index] = fileQueue[targetIdx];
+    fileQueue[targetIdx] = temp;
+    updateQueueUI();
+  }
+
+  function removeItem(index) {
+    fileQueue.splice(index, 1);
+    updateQueueUI();
+  }
+
+  function updateQueueUI() {
+    queueCount.textContent = fileQueue.length;
+    queueList.innerHTML = '';
+
+    if (fileQueue.length === 0) {
+      clearBtn.style.display = 'none';
+      mergeBtn.disabled = true;
+      return;
+    }
+
+    clearBtn.style.display = 'inline-block';
+    // 최소 2개 이상 적재되어야 합치기 활성화
+    mergeBtn.disabled = fileQueue.length < 2;
+
+    fileQueue.forEach((file, idx) => {
+      const item = document.createElement('div');
+      item.className = 'queue-item';
+      item.innerHTML = `
+        <div class="queue-info">
+          <span class="order-idx">${idx + 1}</span>
+          <span class="queue-name">${escapeHtml(file.name)}</span>
+          <span class="queue-size">(${formatBytes(file.size)})</span>
+        </div>
+        <div class="queue-actions">
+          <button class="btn-icon" data-action="up" data-idx="${idx}" title="위로">▲</button>
+          <button class="btn-icon" data-action="down" data-idx="${idx}" title="아래로">▼</button>
+          <button class="btn-icon del" data-action="del" data-idx="${idx}" title="삭제">&times;</button>
+        </div>
+      `;
+
+      item.querySelector('[data-action="up"]').addEventListener('click', () => moveItem(idx, -1));
+      item.querySelector('[data-action="down"]').addEventListener('click', () => moveItem(idx, 1));
+      item.querySelector('[data-action="del"]').addEventListener('click', () => removeItem(idx));
+
+      queueList.appendChild(item);
+    });
+  }
+
+  mergeBtn.addEventListener('click', async () => {
+    if (fileQueue.length < 2) return;
+
+    mergeBtn.disabled = true;
+    mergeBtn.textContent = '병합 처리 중...';
+    resultCard.style.display = 'none';
+
+    try {
+      const mergedPdf = await PDFLib.PDFDocument.create();
+      let totalPages = 0;
+
+      for (const file of fileQueue) {
+        const fileBuffer = await file.arrayBuffer();
+        const pdf = await PDFLib.PDFDocument.load(fileBuffer);
+        const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+        copiedPages.forEach((page) => mergedPdf.addPage(page));
+        totalPages += copiedPages.length;
+      }
+
+      const mergedPdfBytes = await mergedPdf.save();
+      const blob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
+      const downloadUrl = URL.createObjectURL(blob);
+
+      resultMeta.textContent = `총 ${totalPages}페이지 | ${formatBytes(blob.size)}`;
+      downloadBtn.href = downloadUrl;
+      resultCard.style.display = 'block';
+
+    } catch (err) {
+      alert(`병합 실패: ${err.message}`);
+    } finally {
+      mergeBtn.disabled = false;
+      mergeBtn.textContent = 'PDF 하나로 합치기';
+    }
+  });
+
+  function formatBytes(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Local Image Cropper</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --border: #e2e8f0;
+      --border-focus: #3b82f6;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --badge-bg: #eff6ff;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.5;
+      padding: 40px 16px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .wrapper {
+      width: 100%;
+      max-width: 800px;
+    }
+
+    header {
+      margin-bottom: 24px;
+    }
+
+    .tool-badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .desc {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+
+    .step-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .step-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .step-num {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    .step-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .dropzone {
+      border: 2px dashed #cbd5e1;
+      border-radius: 12px;
+      padding: 30px 20px;
+      text-align: center;
+      cursor: pointer;
+      background: #fafafa;
+      transition: border-color 0.15s, background-color 0.15s;
+    }
+
+    .dropzone.dragover {
+      border-color: var(--primary);
+      background-color: var(--badge-bg);
+    }
+
+    .dropzone svg {
+      width: 32px;
+      height: 32px;
+      fill: none;
+      stroke: #94a3b8;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      margin-bottom: 8px;
+    }
+
+    .dropzone-text {
+      font-size: 0.95rem;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .dropzone-sub {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    input[type="file"] { display: none; }
+
+    .editor-container {
+      display: none;
+      margin-top: 20px;
+    }
+
+    .canvas-wrap {
+      position: relative;
+      width: 100%;
+      background: #0f172a;
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      user-select: none;
+    }
+
+    canvas {
+      display: block;
+      max-width: 100%;
+      cursor: default;
+    }
+
+    .info-bar {
+      margin-top: 10px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    label {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #334155;
+    }
+
+    select, input[type="range"] {
+      height: 42px;
+      padding: 0 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.95rem;
+      background: #ffffff;
+      outline: none;
+    }
+
+    .range-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .range-wrap input[type="range"] {
+      flex: 1;
+      height: auto;
+      padding: 0;
+    }
+
+    .range-val {
+      font-size: 0.9rem;
+      font-weight: 600;
+      width: 44px;
+      text-align: right;
+    }
+
+    .btn-action {
+      width: 100%;
+      height: 48px;
+      background: var(--primary);
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.15s;
+    }
+
+    .btn-action:hover { background: var(--primary-hover); }
+    .btn-action:disabled { background: #94a3b8; cursor: not-allowed; }
+
+    .result-box {
+      display: none;
+      margin-top: 20px;
+      padding: 16px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .download-btn {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 600;
+      padding: 8px 16px;
+      border-radius: 6px;
+      background: var(--badge-bg);
+      transition: background 0.15s;
+    }
+
+    .download-btn:hover { background: #dbeafe; }
+  </style>
+</head>
+<body>
+
+<div class="wrapper">
+  <header>
+    <div class="tool-badge">IMAGE TOOL</div>
+    <h1>이미지 자르기 (Image Cropper)</h1>
+    <div class="desc">드래그 영역을 조절하여 원하는 부분만 원본 해상도로 추출합니다.</div>
+  </header>
+
+  <div class="card">
+    <div class="step-header">
+      <div class="step-left">
+        <span class="step-num">01</span>
+        <h2 class="step-title">이미지 불러오기</h2>
+      </div>
+    </div>
+    
+    <div class="dropzone" id="dropzone">
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <div class="dropzone-text">이미지 파일 선택 또는 드래그 앤 드롭</div>
+      <div class="dropzone-sub">PNG · JPG · WebP 지원</div>
+      <input type="file" id="fileInput" accept="image/*">
+    </div>
+
+    <div class="editor-container" id="editorContainer">
+      <div class="canvas-wrap">
+        <canvas id="cropCanvas"></canvas>
+      </div>
+      <div class="info-bar">
+        <span id="origInfo">원본 해상도: -</span>
+        <span id="cropInfo">자른 영역: -</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="step-header">
+      <div class="step-left">
+        <span class="step-num">02</span>
+        <h2 class="step-title">출력 설정</h2>
+      </div>
+    </div>
+
+    <div class="form-grid">
+      <div class="form-group">
+        <label for="formatSelect">포맷</label>
+        <select id="formatSelect">
+          <option value="image/webp">WebP</option>
+          <option value="image/jpeg">JPG</option>
+          <option value="image/png">PNG</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="aspectSelect">비율 고정</label>
+        <select id="aspectSelect">
+          <option value="free">자유 비율</option>
+          <option value="1:1">1:1 정방형</option>
+          <option value="16:9">16:9 와이드</option>
+          <option value="4:3">4:3 표준</option>
+        </select>
+      </div>
+
+      <div class="form-group" id="qualityBox">
+        <label for="qualityRange">품질 (%)</label>
+        <div class="range-wrap">
+          <input type="range" id="qualityRange" min="10" max="100" value="90" step="5">
+          <span class="range-val" id="qualityVal">90%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn-action" id="cropBtn" disabled>선택 영역 추출 및 저장</button>
+
+  <div class="card" id="resultCard" style="display: none; margin-top: 20px;">
+    <div class="step-header">
+      <div class="step-left">
+        <span class="step-num">03</span>
+        <h2 class="step-title">결과 확인</h2>
+      </div>
+    </div>
+    <div class="result-box" id="resultBox">
+      <div>
+        <div id="resultName" style="font-weight: 600;"></div>
+        <div id="resultMeta" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;"></div>
+      </div>
+      <a class="download-btn" id="downloadBtn" download>다운로드</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  const fileInput = document.getElementById('fileInput');
+  const dropzone = document.getElementById('dropzone');
+  const editorContainer = document.getElementById('editorContainer');
+  const canvas = document.getElementById('cropCanvas');
+  const ctx = canvas.getContext('2d');
+  const origInfo = document.getElementById('origInfo');
+  const cropInfo = document.getElementById('cropInfo');
+  const formatSelect = document.getElementById('formatSelect');
+  const aspectSelect = document.getElementById('aspectSelect');
+  const qualityRange = document.getElementById('qualityRange');
+  const qualityVal = document.getElementById('qualityVal');
+  const qualityBox = document.getElementById('qualityBox');
+  const cropBtn = document.getElementById('cropBtn');
+  const resultCard = document.getElementById('resultCard');
+  const resultBox = document.getElementById('resultBox');
+  const resultName = document.getElementById('resultName');
+  const resultMeta = document.getElementById('resultMeta');
+  const downloadBtn = document.getElementById('downloadBtn');
+
+  let currentImage = null;
+  let sourceFileName = '';
+  let scaleRatio = 1; // 캔버스 표시 크기 대비 원본 이미지 크기 비율
+
+  // 크롭 박스 좌표 (캔버스 상 좌표)
+  let cropBox = { x: 50, y: 50, width: 200, height: 200 };
+  const HANDLE_RADIUS = 7;
+  let activeInteraction = null; // 'move' 또는 핸들 이름 ('tl', 'tr', 'bl', 'br', 't', 'b', 'l', 'r')
+  let dragStart = { x: 0, y: 0 };
+  let initialCropBox = null;
+
+  dropzone.addEventListener('click', () => {
+    fileInput.value = '';
+    fileInput.click();
+  });
+
+  dropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropzone.classList.add('dragover');
+  });
+
+  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+
+  dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.classList.remove('dragover');
+    if (e.dataTransfer && e.dataTransfer.files.length > 0) {
+      loadFile(e.dataTransfer.files[0]);
+    }
+  });
+
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      loadFile(e.target.files[0]);
+    }
+  });
+
+  qualityRange.addEventListener('input', (e) => {
+    qualityVal.textContent = `${e.target.value}%`;
+  });
+
+  formatSelect.addEventListener('change', (e) => {
+    const isPng = e.target.value === 'image/png';
+    qualityBox.style.opacity = isPng ? '0.4' : '1';
+    qualityRange.disabled = isPng;
+  });
+
+  aspectSelect.addEventListener('change', () => {
+    applyAspectRatio();
+    draw();
+  });
+
+  async function loadFile(file) {
+    if (!file.type.startsWith('image/') && !/\.(jpe?g|png|webp|gif|bmp|avif)$/i.test(file.name)) return;
+    sourceFileName = file.name;
+
+    currentImage = await createImageBitmap(file);
+    origInfo.textContent = `원본 해상도: ${currentImage.width} × ${currentImage.height}px`;
+
+    // 에디터 컨테이너 표시
+    editorContainer.style.display = 'block';
+    dropzone.style.display = 'none';
+    cropBtn.disabled = false;
+    resultCard.style.display = 'none';
+
+    setupCanvas();
+  }
+
+  function setupCanvas() {
+    const maxWidth = 750;
+    const maxHeight = 500;
+
+    let displayWidth = currentImage.width;
+    let displayHeight = currentImage.height;
+
+    const aspect = displayWidth / displayHeight;
+    if (displayWidth > maxWidth) {
+      displayWidth = maxWidth;
+      displayHeight = displayWidth / aspect;
+    }
+    if (displayHeight > maxHeight) {
+      displayHeight = maxHeight;
+      displayWidth = displayHeight * aspect;
+    }
+
+    canvas.width = Math.round(displayWidth);
+    canvas.height = Math.round(displayHeight);
+    scaleRatio = currentImage.width / canvas.width;
+
+    // 크롭 박스 초기 위치 설정 (중앙 70%)
+    const initW = Math.round(canvas.width * 0.7);
+    const initH = Math.round(canvas.height * 0.7);
+    cropBox = {
+      x: Math.round((canvas.width - initW) / 2),
+      y: Math.round((canvas.height - initH) / 2),
+      width: initW,
+      height: initH
+    };
+
+    applyAspectRatio();
+    draw();
+  }
+
+  function applyAspectRatio() {
+    const mode = aspectSelect.value;
+    if (mode === 'free') return;
+
+    let targetRatio = 1;
+    if (mode === '16:9') targetRatio = 16 / 9;
+    else if (mode === '4:3') targetRatio = 4 / 3;
+
+    let newH = cropBox.width / targetRatio;
+    if (cropBox.y + newH > canvas.height) {
+      newH = canvas.height - cropBox.y;
+      cropBox.width = newH * targetRatio;
+    }
+    cropBox.height = newH;
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // 1. 원본 이미지 렌더링
+    ctx.drawImage(currentImage, 0, 0, canvas.width, canvas.height);
+
+    // 2. 외부 어두운 오버레이 처리
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // 3. 선택 영역 클리어 (밝은 원래 이미지 노출)
+    ctx.clearRect(cropBox.x, cropBox.y, cropBox.width, cropBox.height);
+    ctx.drawImage(
+      currentImage,
+      cropBox.x * scaleRatio, cropBox.y * scaleRatio, cropBox.width * scaleRatio, cropBox.height * scaleRatio,
+      cropBox.x, cropBox.y, cropBox.width, cropBox.height
+    );
+
+    // 4. 경계 테두리
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(cropBox.x, cropBox.y, cropBox.width, cropBox.height);
+
+    // 5. 3분할 그리드 가이드라인
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    // 세로선
+    ctx.moveTo(cropBox.x + cropBox.width / 3, cropBox.y);
+    ctx.lineTo(cropBox.x + cropBox.width / 3, cropBox.y + cropBox.height);
+    ctx.moveTo(cropBox.x + (cropBox.width * 2) / 3, cropBox.y);
+    ctx.lineTo(cropBox.x + (cropBox.width * 2) / 3, cropBox.y + cropBox.height);
+    // 가로선
+    ctx.moveTo(cropBox.x, cropBox.y + cropBox.height / 3);
+    ctx.lineTo(cropBox.x + cropBox.width, cropBox.y + cropBox.height / 3);
+    ctx.moveTo(cropBox.x, cropBox.y + (cropBox.height * 2) / 3);
+    ctx.lineTo(cropBox.x + cropBox.width, cropBox.y + (cropBox.height * 2) / 3);
+    ctx.stroke();
+
+    // 6. 조절 핸들 그리기
+    const handles = getHandles();
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = '#0284c7';
+    ctx.lineWidth = 2;
+
+    for (const key in handles) {
+      const h = handles[key];
+      ctx.beginPath();
+      ctx.arc(h.x, h.y, HANDLE_RADIUS, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    // 좌표 정보 갱신
+    const realW = Math.round(cropBox.width * scaleRatio);
+    const realH = Math.round(cropBox.height * scaleRatio);
+    cropInfo.textContent = `자른 영역: ${realW} × ${realH}px`;
+  }
+
+  function getHandles() {
+    const x = cropBox.x;
+    const y = cropBox.y;
+    const w = cropBox.width;
+    const h = cropBox.height;
+
+    return {
+      tl: { x: x, y: y },
+      tr: { x: x + w, y: y },
+      bl: { x: x, y: y + h },
+      br: { x: x + w, y: y + h },
+      t:  { x: x + w / 2, y: y },
+      b:  { x: x + w / 2, y: y + h },
+      l:  { x: x, y: y + h / 2 },
+      r:  { x: x + w, y: y + h / 2 }
+    };
+  }
+
+  function getMousePos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    return {
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY
+    };
+  }
+
+  function hitTest(pos) {
+    const handles = getHandles();
+    for (const key in handles) {
+      const h = handles[key];
+      const dist = Math.hypot(pos.x - h.x, pos.y - h.y);
+      if (dist <= HANDLE_RADIUS + 4) return key;
+    }
+
+    if (pos.x >= cropBox.x && pos.x <= cropBox.x + cropBox.width &&
+        pos.y >= cropBox.y && pos.y <= cropBox.y + cropBox.height) {
+      return 'move';
+    }
+
+    return null;
+  }
+
+  canvas.addEventListener('mousedown', (e) => {
+    const pos = getMousePos(e);
+    const hit = hitTest(pos);
+    if (!hit) return;
+
+    activeInteraction = hit;
+    dragStart = pos;
+    initialCropBox = { ...cropBox };
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    const pos = getMousePos(e);
+
+    if (!activeInteraction) {
+      const hit = hitTest(pos);
+      if (hit === 'move') canvas.style.cursor = 'move';
+      else if (['tl', 'br'].includes(hit)) canvas.style.cursor = 'nwse-resize';
+      else if (['tr', 'bl'].includes(hit)) canvas.style.cursor = 'nesw-resize';
+      else if (['t', 'b'].includes(hit)) canvas.style.cursor = 'ns-resize';
+      else if (['l', 'r'].includes(hit)) canvas.style.cursor = 'ew-resize';
+      else canvas.style.cursor = 'default';
+      return;
+    }
+
+    const dx = pos.x - dragStart.x;
+    const dy = pos.y - dragStart.y;
+
+    if (activeInteraction === 'move') {
+      cropBox.x = Math.max(0, Math.min(canvas.width - initialCropBox.width, initialCropBox.x + dx));
+      cropBox.y = Math.max(0, Math.min(canvas.height - initialCropBox.height, initialCropBox.y + dy));
+    } else {
+      resizeCropBox(activeInteraction, dx, dy);
+    }
+
+    draw();
+  });
+
+  window.addEventListener('mouseup', () => {
+    activeInteraction = null;
+  });
+
+  function resizeCropBox(handle, dx, dy) {
+    let { x, y, width, height } = initialCropBox;
+    const minSize = 30;
+    const aspectMode = aspectSelect.value;
+    let targetRatio = null;
+
+    if (aspectMode === '1:1') targetRatio = 1;
+    else if (aspectMode === '16:9') targetRatio = 16 / 9;
+    else if (aspectMode === '4:3') targetRatio = 4 / 3;
+
+    if (handle.includes('r')) width = Math.max(minSize, Math.min(canvas.width - x, width + dx));
+    if (handle.includes('b')) height = Math.max(minSize, Math.min(canvas.height - y, height + dy));
+    if (handle.includes('l')) {
+      const newW = Math.max(minSize, width - dx);
+      const newX = x + (width - newW);
+      if (newX >= 0) { x = newX; width = newW; }
+    }
+    if (handle.includes('t')) {
+      const newH = Math.max(minSize, height - dy);
+      const newY = y + (height - newH);
+      if (newY >= 0) { y = newY; height = newH; }
+    }
+
+    if (targetRatio) {
+      if (['l', 'r'].includes(handle)) {
+        height = width / targetRatio;
+      } else {
+        width = height * targetRatio;
+      }
+      if (x + width > canvas.width) width = canvas.width - x;
+      if (y + height > canvas.height) height = canvas.height - y;
+    }
+
+    cropBox = { x, y, width, height };
+  }
+
+  cropBtn.addEventListener('click', async () => {
+    if (!currentImage) return;
+
+    cropBtn.disabled = true;
+    cropBtn.textContent = '추출 중...';
+
+    // 원본 해상도 매핑 연산
+    const sx = Math.max(0, Math.round(cropBox.x * scaleRatio));
+    const sy = Math.max(0, Math.round(cropBox.y * scaleRatio));
+    const sw = Math.min(currentImage.width - sx, Math.round(cropBox.width * scaleRatio));
+    const sh = Math.min(currentImage.height - sy, Math.round(cropBox.height * scaleRatio));
+
+    const exportCanvas = document.createElement('canvas');
+    exportCanvas.width = sw;
+    exportCanvas.height = sh;
+    const expCtx = exportCanvas.getContext('2d');
+
+    const format = formatSelect.value;
+    const quality = parseInt(qualityRange.value, 10) / 100;
+    const ext = format === 'image/jpeg' ? 'jpg' : format.split('/')[1];
+
+    if (format === 'image/jpeg') {
+      expCtx.fillStyle = '#FFFFFF';
+      expCtx.fillRect(0, 0, sw, sh);
+    }
+
+    expCtx.drawImage(currentImage, sx, sy, sw, sh, 0, 0, sw, sh);
+
+    exportCanvas.toBlob((blob) => {
+      const baseName = sourceFileName.substring(0, sourceFileName.lastIndexOf('.')) || sourceFileName;
+      const outName = `${baseName}_cropped.${ext}`;
+      const url = URL.createObjectURL(blob);
+
+      resultName.textContent = outName;
+      resultMeta.textContent = `${sw} × ${sh}px | ${formatBytes(blob.size)}`;
+      downloadBtn.href = url;
+      downloadBtn.download = outName;
+
+      resultCard.style.display = 'block';
+      resultBox.style.display = 'flex';
+      cropBtn.disabled = false;
+      cropBtn.textContent = '선택 영역 추출 및 저장';
+    }, format, quality);
+  });
+
+  function formatBytes(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  }
+</script>
+
+</body>
+</html>
