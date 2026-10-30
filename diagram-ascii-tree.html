@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ASCII Tree Digram Generator</title>
+  <style>
+    :root {
+      --bg-color: #1a1d21;
+      --panel-bg: #22252a;
+      --border-color: #383e47;
+      --text-color: #e6edf3;
+      --text-muted: #8b949e;
+      --primary-color: #2ea043;
+      --primary-hover: #3fb950;
+      --btn-secondary-bg: #30363d;
+      --btn-secondary-hover: #3c444d;
+      --accent-color: #58a6ff;
+      --focus-ring: rgba(88, 166, 255, 0.4);
+    }
+
+    [data-theme="light"] {
+      --bg-color: #f6f8fa;
+      --panel-bg: #ffffff;
+      --border-color: #d0d7de;
+      --text-color: #24292f;
+      --text-muted: #57606a;
+      --primary-color: #1f883d;
+      --primary-hover: #1a7f37;
+      --btn-secondary-bg: #eaeef2;
+      --btn-secondary-hover: #dbe0e6;
+      --accent-color: #0969da;
+      --focus-ring: rgba(9, 105, 218, 0.3);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      transition: background-color 0.2s, color 0.2s;
+    }
+
+    header {
+      padding: 0.85rem 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-icon {
+      color: var(--primary-color);
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.45rem 0.9rem;
+      font-size: 0.88rem;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+
+    .btn-primary {
+      background-color: var(--primary-color);
+      color: #ffffff;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .btn-secondary {
+      background-color: var(--btn-secondary-bg);
+      color: var(--text-color);
+      border-color: var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background-color: var(--btn-secondary-hover);
+    }
+
+    .checkbox-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.88rem;
+      color: var(--text-color);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .checkbox-label input[type="checkbox"] {
+      width: 1rem;
+      height: 1rem;
+      accent-color: var(--primary-color);
+      cursor: pointer;
+    }
+
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      padding: 1rem 1.5rem;
+    }
+
+    @media (max-width: 840px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .panel {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      min-height: 480px;
+    }
+
+    .panel-header {
+      font-size: 0.82rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
+
+    .editor {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      padding: 1rem;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+      font-size: 0.92rem;
+      line-height: 1.55;
+      background-color: var(--panel-bg);
+      color: var(--text-color);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      resize: none;
+      outline: none;
+      white-space: pre;
+      overflow-wrap: normal;
+      overflow-x: auto;
+      tab-size: 2;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .editor:focus {
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 3px var(--focus-ring);
+    }
+
+    footer {
+      padding: 0.85rem 1.5rem;
+      border-top: 1px solid var(--border-color);
+      text-align: center;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    .tooltip-container {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      cursor: help;
+      font-size: 0.85rem;
+      font-weight: normal;
+      color: var(--text-muted);
+      margin-left: 0.25rem;
+    }
+
+    .tooltip-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.15rem;
+      height: 1.15rem;
+      border-radius: 50%;
+      border: 1px solid var(--border-color);
+      font-size: 0.72rem;
+      line-height: 1;
+      color: var(--text-muted);
+    }
+
+    .tooltip-text {
+      visibility: hidden;
+      opacity: 0;
+      position: absolute;
+      top: 135%;
+      left: 0;
+      background-color: var(--panel-bg);
+      color: var(--text-color);
+      border: 1px solid var(--border-color);
+      padding: 0.45rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      white-space: nowrap;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+      z-index: 100;
+      transition: opacity 0.2s, visibility 0.2s;
+      pointer-events: none;
+    }
+
+    .tooltip-text::before {
+      content: '';
+      position: absolute;
+      bottom: 100%;
+      left: 0.6rem;
+      border-width: 5px;
+      border-style: solid;
+      border-color: transparent transparent var(--border-color) transparent;
+    }
+
+    .tooltip-container:hover .tooltip-text,
+    .tooltip-container:focus .tooltip-text {
+      visibility: visible;
+      opacity: 1;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="brand">
+      <span class="brand-icon">📁</span>
+      <span>ASCII Tree Digram Generator</span>
+      <span class="tooltip-container" tabindex="0" aria-label="도움말">
+        <span class="tooltip-icon">ℹ️</span>
+        <span class="tooltip-text">순수 텍스트 환경에서 폴더 구조를 명시할 때 쓸모 있음.</span>
+      </span>
+    </div>
+    <div class="controls">
+      <label class="checkbox-label" title="트리 우측에 주석 열을 정렬하여 출력합니다">
+        <input type="checkbox" id="alignCommentsToggle" checked>
+        <span>주석 정렬</span>
+      </label>
+      <button type="button" class="btn btn-secondary" id="themeToggle" title="화면 테마 변경">
+        <span id="themeIcon">☀️</span>
+        <span id="themeLabel">Light</span>
+      </button>
+      <button type="button" class="btn btn-primary" id="copyBtn" title="결과 텍스트 클립보드 복사">
+        <span>📋</span>
+        <span id="copyBtnText">Copy</span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <section class="panel">
+      <div class="panel-header">Input (들여쓰기 2칸 또는 4칸, # 주석)</div>
+      <textarea id="inputText" class="editor" spellcheck="false" placeholder="폴더 및 파일 목록을 입력하세요..."></textarea>
+    </section>
+    <section class="panel">
+      <div class="panel-header">Output (ASCII Tree)</div>
+      <textarea id="outputText" class="editor" readonly spellcheck="false"></textarea>
+    </section>
+  </main>
+
+  <footer>
+    삼순동순 기술 제작, inspired by <a href="https://tree.nathanfriend.com/">이거</a>
+  </footer>
+
+  <script>
+    const INITIAL_INPUT = `my-app
+  public
+    favicon.ico # 사이트 아이콘
+    index.html # 메인 HTML 템플릿
+  src
+    components # UI 컴포넌트 폴더
+      Header.tsx # 상단 네비게이션 헤더
+      Sidebar.tsx
+      TreeViewer.tsx # 아스키 트리 렌더러
+    utils # 헬퍼 유틸리티 함수
+      parser.ts # 트리 파싱 로직
+      formatter.ts # 정렬 포맷터
+    App.tsx # 루트 컴포넌트
+    index.tsx # 진입점 파일
+  package.json # 프로젝트 의존성 설정
+  README.md`;
+
+    const CHARSETS = {
+      child: '├── ',
+      lastChild: '└── ',
+      dir: '│   ',
+      empty: '    '
+    };
+
+    const inputArea = document.getElementById('inputText');
+    const outputArea = document.getElementById('outputText');
+    const alignToggle = document.getElementById('alignCommentsToggle');
+    const copyBtn = document.getElementById('copyBtn');
+    const copyBtnText = document.getElementById('copyBtnText');
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+    const themeLabel = document.getElementById('themeLabel');
+
+    // 한글 및 전각 문자 등 2셀 너비 계산
+    function getVisualWidth(str) {
+      let width = 0;
+      for (let i = 0; i < str.length; i++) {
+        const code = str.codePointAt(i);
+        if (code > 0xffff) {
+          i++;
+        }
+        if (
+          (code >= 0x1100 && code <= 0x11ff) ||
+          (code >= 0x2e80 && code <= 0x9fff) ||
+          (code >= 0xac00 && code <= 0xd7af) ||
+          (code >= 0xf900 && code <= 0xfaff) ||
+          (code >= 0xff01 && code <= 0xff60) ||
+          (code >= 0xffe0 && code <= 0xffe6)
+        ) {
+          width += 2;
+        } else {
+          width += 1;
+        }
+      }
+      return width;
+    }
+
+    // 텍스트 라인을 계층 트리 구조로 파싱
+    function parseInput(text) {
+      const rawLines = text.split(/\r?\n/).filter(line => line.trim().length > 0);
+      const root = { name: '.', comment: '', indent: -1, children: [], parent: null };
+      const stack = [root];
+
+      for (const line of rawLines) {
+        // 앞쪽 공백 및 마크다운 불릿(-) 분리
+        const indentMatch = line.match(/^(\s*)(?:-\s)?(.*)$/);
+        if (!indentMatch) continue;
+
+        const indent = indentMatch[1].length;
+        const remainder = indentMatch[2].trimEnd();
+
+        // # 기호 기준 주석 분리
+        const commentIndex = remainder.indexOf('#');
+        let name = '';
+        let comment = '';
+
+        if (commentIndex !== -1) {
+          name = remainder.slice(0, commentIndex).trim();
+          comment = remainder.slice(commentIndex + 1).trim();
+        } else {
+          name = remainder.trim();
+        }
+
+        if (!name && !comment) continue;
+
+        const node = {
+          name,
+          comment,
+          indent,
+          children: [],
+          parent: null
+        };
+
+        while (stack.length > 1 && stack[stack.length - 1].indent >= indent) {
+          stack.pop();
+        }
+
+        const parent = stack[stack.length - 1];
+        parent.children.push(node);
+        node.parent = parent;
+        stack.push(node);
+      }
+
+      return root;
+    }
+
+    // 트리 구조에서 라인 정보 추출
+    function collectTreeNodes(node, items) {
+      if (node.parent) {
+        const siblings = node.parent.children;
+        const isLast = siblings[siblings.length - 1] === node;
+        const branchParts = [isLast ? CHARSETS.lastChild : CHARSETS.child];
+        let curr = node.parent;
+
+        while (curr && curr.parent) {
+          const parentSiblings = curr.parent.children;
+          const parentIsLast = parentSiblings[parentSiblings.length - 1] === curr;
+          branchParts.unshift(parentIsLast ? CHARSETS.empty : CHARSETS.dir);
+          curr = curr.parent;
+        }
+
+        // root dot OFF 적용: 최상위 4문자(|-- 등) 잘라내기
+        const prefix = branchParts.join('').slice(4);
+
+        // trailing slash ON 적용: 자식이 있으면 폴더 뒤에 / 추가
+        let displayName = node.name;
+        if (node.children.length > 0 && !displayName.endsWith('/')) {
+          displayName += '/';
+        }
+
+        items.push({
+          treeText: prefix + displayName,
+          comment: node.comment
+        });
+      }
+
+      for (const child of node.children) {
+        collectTreeNodes(child, items);
+      }
+    }
+
+    // 최종 텍스트 렌더링
+    function renderTree() {
+      const source = inputArea.value;
+      const root = parseInput(source);
+      const items = [];
+      collectTreeNodes(root, items);
+
+      if (items.length === 0) {
+        outputArea.value = '';
+        return;
+      }
+
+      const shouldAlign = alignToggle.checked;
+      const hasAnyComment = items.some(item => Boolean(item.comment));
+
+      if (shouldAlign && hasAnyComment) {
+        let maxVisualWidth = 0;
+        for (const item of items) {
+          const width = getVisualWidth(item.treeText);
+          if (width > maxVisualWidth) {
+            maxVisualWidth = width;
+          }
+        }
+
+        const resultLines = items.map(item => {
+          if (!item.comment) {
+            return item.treeText;
+          }
+          const currentWidth = getVisualWidth(item.treeText);
+          const padding = ' '.repeat(Math.max(2, maxVisualWidth - currentWidth + 2));
+          return `${item.treeText}${padding}# ${item.comment}`;
+        });
+
+        outputArea.value = resultLines.join('\n');
+      } else {
+        const resultLines = items.map(item => {
+          if (!item.comment) {
+            return item.treeText;
+          }
+          return `${item.treeText}  # ${item.comment}`;
+        });
+        outputArea.value = resultLines.join('\n');
+      }
+    }
+
+    // 복사 이벤트
+    copyBtn.addEventListener('click', async () => {
+      if (!outputArea.value) return;
+      try {
+        await navigator.clipboard.writeText(outputArea.value);
+        copyBtnText.textContent = 'Copied!';
+        setTimeout(() => {
+          copyBtnText.textContent = 'Copy';
+        }, 1200);
+      } catch (err) {
+        outputArea.select();
+        document.execCommand('copy');
+        copyBtnText.textContent = 'Copied!';
+        setTimeout(() => {
+          copyBtnText.textContent = 'Copy';
+        }, 1200);
+      }
+    });
+
+    // 테마 토글
+    function updateThemeUI(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      if (theme === 'dark') {
+        themeIcon.textContent = '☀️';
+        themeLabel.textContent = 'Light';
+      } else {
+        themeIcon.textContent = '🌙';
+        themeLabel.textContent = 'Dark';
+      }
+    }
+
+    themeToggle.addEventListener('click', () => {
+      const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+      const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      updateThemeUI(nextTheme);
+    });
+
+    // 입력 및 옵션 변경 감지
+    inputArea.addEventListener('input', renderTree);
+    alignToggle.addEventListener('change', renderTree);
+
+    // 초기 실행
+    inputArea.value = INITIAL_INPUT;
+    renderTree();
+  </script>
+</body>
+
+</html>
