@@ -22,6 +22,11 @@
 - UX: 마우스 드래그를 통한 자유 비율 또는 고정 종횡비(1:1, 4:3, 16:9) 영역 지정, 실시간 미리보기.
 - 핵심 기술: 순수 2D Canvas 렌더링, 오프스크린 캔버스를 통한 무손실 픽셀 슬라이싱(drawImage).
 
+### 웹 이미지 에디터 (image-editor.html)
+- 기능: 브라우저 내부에서 이미지 필터(밝기, 대비, 채도, 블러 등), 각도 회전, 대칭 반전 및 색상 보정을 수행하는 로컬 편집기.
+- UX: 실시간 캔버스 뷰포트, 히스토리 실행 취소/다시 실행(Undo/Redo), 드래그 앤 드롭 업로드 및 즉시 다운로드.
+- 핵심 기술: HTML5 Canvas API, CSS Filters, ImageBitmap, FileReader.
+
 ### PDF 파일 병합기 (pdf-merger.html)
 - 기능: 여러 개의 PDF 문서를 로컬에서 하나의 단일 PDF 파일로 결합.
 - UX: 파일 드래그 앤 드롭 업로드, 순서 변경(재정렬), 병합 실행 및 저장.
@@ -48,6 +53,6 @@
 - 사용 기술: 토크나이저 및 클라이언트 사이드 수식 파서(Implicit Math Parser), Web Storage API(LocalStorage 히스토리 보존), Web Clipboard API.
 
 ## 실행 방법 (Usage)
-1. 파일 관리자에서 원하는 기능의 HTML 파일(image-converter.html, image-cropper.html, pdf-merger.html, text-diagram-tree.html, text-editor.html, text-converter.html, mini-calculator.html)을 더블 클릭한다.
+1. 카탈로그 허브 페이지(index.html) 또는 원하는 개별 기능의 HTML 파일(image-converter.html, image-cropper.html, image-editor.html, pdf-merger.html, text-diagram-tree.html, text-editor.html, text-converter.html, mini-calculator.html)을 파일 관리자에서 더블 클릭한다.
 2. 시스템 기본 브라우저(Chrome, Firefox, Whale, Edge 등)에서 즉시 도구가 열린다.
 3. 작업 완료 후 결과물을 로컬 드라이브에 직접 다운로드한다.
