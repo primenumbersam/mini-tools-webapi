@@ -1,0 +1,1760 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mini Notepad</title>
+  <style>
+    :root {
+      --bg-app: #f1f5f9;
+      --bg-surface: #ffffff;
+      --bg-toolbar: #f8fafc;
+      --bg-tab-bar: #e2e8f0;
+      --bg-tab-inactive: #cbd5e1;
+      --bg-tab-hover: #f1f5f9;
+      --bg-gutter: #f8fafc;
+      --bg-status: #0f172a;
+      --bg-modal: rgba(15, 23, 42, 0.45);
+      --border: #cbd5e1;
+      --border-subtle: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --text-gutter: #94a3b8;
+      --text-status: #f8fafc;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-soft: #dbeafe;
+      --btn-primary-text: #ffffff;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --success: #10b981;
+      --selection-bg: #bfdbfe;
+      --drop-overlay-bg: rgba(37, 99, 235, 0.08);
+      --editor-font: 'JetBrains Mono', 'D2Coding', 'Consolas', 'Malgun Gothic', monospace;
+      --font-size: 14px;
+      --line-height: 22px;
+    }
+
+    [data-theme="dark"] {
+      --bg-app: #121212;
+      --bg-surface: #1e1e1e;
+      --bg-toolbar: #252525;
+      --bg-tab-bar: #141414;
+      --bg-tab-inactive: #1f1f1f;
+      --bg-tab-hover: #2d2d2d;
+      --bg-gutter: #1e1e1e;
+      --bg-status: #141414;
+      --bg-modal: rgba(0, 0, 0, 0.7);
+      --border: #383838;
+      --border-subtle: #262626;
+      --text-main: #ededed;
+      --text-muted: #9e9e9e;
+      --text-gutter: #666666;
+      --text-status: #cccccc;
+      --primary: #e5e5e5;
+      --primary-hover: #ffffff;
+      --primary-soft: #2e2e2e;
+      --btn-primary-text: #121212;
+      --selection-bg: #3c3c3c;
+      --drop-overlay-bg: rgba(255, 255, 255, 0.06);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--bg-app);
+      color: var(--text-main);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Malgun Gothic", sans-serif;
+      font-size: 13px;
+      user-select: none;
+    }
+
+    .app-shell {
+      display: flex;
+      flex-direction: column;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    /* Top Toolbar */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 10px;
+      background: var(--bg-toolbar);
+      border-bottom: 1px solid var(--border);
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .toolbar-group {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .brand-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--primary);
+      padding: 0 8px 0 4px;
+      margin-right: 4px;
+    }
+
+    .divider {
+      width: 1px;
+      height: 18px;
+      background: var(--border);
+      margin: 0 4px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      height: 28px;
+      padding: 0 9px;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-main);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.12s, border-color 0.12s, color 0.12s;
+      white-space: nowrap;
+    }
+
+    .btn:hover:not(:disabled) {
+      background: var(--bg-tab-hover);
+      border-color: var(--border);
+    }
+
+    .btn:active:not(:disabled) {
+      transform: translateY(0.5px);
+    }
+
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .btn.active {
+      background: var(--primary-soft);
+      color: var(--primary);
+      border-color: var(--primary);
+      font-weight: 600;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: var(--btn-primary-text, #ffffff);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--primary-hover);
+      color: var(--btn-primary-text, #ffffff);
+      border-color: transparent;
+    }
+
+    .btn svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    select.compact-select {
+      height: 28px;
+      padding: 0 6px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg-surface);
+      color: var(--text-main);
+      font-size: 12px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    /* Tab Bar (Windows 11 Notepad style) */
+    .tab-bar-wrap {
+      display: flex;
+      align-items: flex-end;
+      background: var(--bg-tab-bar);
+      padding: 6px 8px 0 8px;
+      border-bottom: 1px solid var(--border);
+      gap: 4px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .tab-bar-wrap::-webkit-scrollbar {
+      display: none;
+    }
+
+    .tab-list {
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
+      max-width: calc(100% - 40px);
+      overflow-x: auto;
+    }
+
+    .tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      height: 32px;
+      min-width: 120px;
+      max-width: 210px;
+      padding: 0 10px 0 12px;
+      background: var(--bg-tab-inactive);
+      color: var(--text-muted);
+      border: 1px solid transparent;
+      border-bottom: none;
+      border-radius: 8px 8px 0 0;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      position: relative;
+      transition: background 0.12s, color 0.12s;
+      flex-shrink: 0;
+    }
+
+    .tab:hover {
+      background: var(--bg-tab-hover);
+      color: var(--text-main);
+    }
+
+    .tab.active {
+      background: var(--bg-surface);
+      color: var(--text-main);
+      font-weight: 600;
+      border-color: var(--border);
+      box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.03);
+    }
+
+    .tab-title {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .tab-handle-badge {
+      font-size: 10px;
+      padding: 1px 4px;
+      border-radius: 4px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    .tab-dirty {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--primary);
+      display: none;
+      flex-shrink: 0;
+    }
+
+    .tab.modified .tab-dirty {
+      display: inline-block;
+    }
+
+    .tab-close {
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .tab-close:hover {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--danger);
+    }
+
+    .tab-add-btn {
+      width: 28px;
+      height: 28px;
+      margin-bottom: 2px;
+      border-radius: 6px;
+      border: none;
+      background: transparent;
+      color: var(--text-main);
+      font-size: 18px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .tab-add-btn:hover {
+      background: var(--bg-surface);
+    }
+
+    /* Collapsible Find & Replace Bar */
+    .find-bar {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 8px 12px;
+      background: var(--bg-toolbar);
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+      z-index: 10;
+    }
+
+    .find-bar.open {
+      display: flex;
+    }
+
+    .find-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .find-input {
+      height: 28px;
+      width: 190px;
+      padding: 0 8px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg-surface);
+      color: var(--text-main);
+      font-size: 12px;
+      outline: none;
+    }
+
+    .find-input:focus {
+      border-color: var(--primary);
+    }
+
+    .find-count {
+      font-size: 11px;
+      color: var(--text-muted);
+      min-width: 70px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Main Editor Workspace */
+    .workspace {
+      position: relative;
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      background: var(--bg-surface);
+    }
+
+    /* Line Number Gutter */
+    .gutter {
+      width: 54px;
+      padding: 12px 8px 24px 4px;
+      background: var(--bg-gutter);
+      border-right: 1px solid var(--border-subtle);
+      color: var(--text-gutter);
+      font-family: var(--editor-font);
+      font-size: var(--font-size);
+      line-height: var(--line-height);
+      text-align: right;
+      overflow: hidden;
+      user-select: none;
+      white-space: pre;
+      font-variant-numeric: tabular-nums;
+      flex-shrink: 0;
+    }
+
+    /* Pure Textarea */
+    .editor-textarea {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      padding: 12px 16px 24px 12px;
+      border: none;
+      outline: none;
+      resize: none;
+      background: var(--bg-surface);
+      color: var(--text-main);
+      font-family: var(--editor-font);
+      font-size: var(--font-size);
+      line-height: var(--line-height);
+      tab-size: 4;
+      white-space: pre;
+      overflow: auto;
+      user-select: text;
+    }
+
+    .editor-textarea.word-wrap {
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .editor-textarea::selection {
+      background: var(--selection-bg);
+    }
+
+    /* Drag & Drop Overlay */
+    .drop-overlay {
+      position: absolute;
+      inset: 8px;
+      border: 2px dashed var(--primary);
+      border-radius: 12px;
+      background: var(--drop-overlay-bg);
+      backdrop-filter: blur(2px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 30;
+      pointer-events: none;
+    }
+
+    .drop-overlay.active {
+      display: flex;
+    }
+
+    .drop-overlay-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .drop-overlay-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* Bottom Status Bar */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 26px;
+      padding: 0 12px;
+      background: var(--bg-status);
+      color: var(--text-status);
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+
+    .status-section {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .status-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .status-item.clickable {
+      cursor: pointer;
+      padding: 2px 5px;
+      border-radius: 4px;
+    }
+
+    .status-item.clickable:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--success);
+    }
+
+    /* Custom Modal Dialog (replaces alert/confirm) */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: var(--bg-modal);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 16px;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 380px;
+      padding: 20px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.25);
+    }
+
+    .modal-title {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--text-main);
+    }
+
+    .modal-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 16px;
+    }
+
+    .modal-input {
+      width: 100%;
+      height: 34px;
+      padding: 0 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg-toolbar);
+      color: var(--text-main);
+      font-size: 13px;
+      margin-bottom: 16px;
+      outline: none;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    /* Toast notification */
+    .toast {
+      position: fixed;
+      bottom: 38px;
+      right: 16px;
+      background: #252525;
+      color: #ededed;
+      border: 1px solid #383838;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 500;
+      opacity: 0;
+      transform: translateY(10px);
+      pointer-events: none;
+      transition: all 0.2s ease;
+      z-index: 90;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.25);
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="app-shell" id="appShell">
+    <!-- Top Action Toolbar -->
+    <header class="toolbar">
+      <div class="toolbar-group">
+        <div class="brand-badge">
+          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.2" fill="none">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+            <line x1="10" y1="9" x2="8" y2="9" />
+          </svg>
+          삼순동순노트
+        </div>
+
+        <button class="btn" id="newTabBtn" title="새 탭 (Alt + N)">
+          <svg viewBox="0 0 24 24">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          새 파일
+        </button>
+
+        <button class="btn" id="openFileBtn" title="파일 열기 (Ctrl + O)">
+          <svg viewBox="0 0 24 24">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+          </svg>
+          열기
+        </button>
+
+        <button class="btn btn-primary" id="saveFileBtn" title="저장 (Ctrl + S) - 핸들 연결 시 즉시 덮어쓰기">
+          <svg viewBox="0 0 24 24">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+            <polyline points="17 21 17 13 7 13 7 21" />
+            <polyline points="7 3 7 8 15 8" />
+          </svg>
+          저장
+        </button>
+
+        <button class="btn" id="saveAsFileBtn" title="다른 이름으로 저장 (Ctrl + Shift + S)">
+          다른 이름으로 저장
+        </button>
+
+        <div class="divider"></div>
+
+        <button class="btn" id="toggleFindBtn" title="찾기 및 바꾸기 (Ctrl + F)">
+          <svg viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          찾기/바꾸기
+        </button>
+
+        <button class="btn" id="redecodeEucKrBtn" title="깨진 한글(CP949/EUC-KR)로 다시 읽기" style="display: none;">
+          EUC-KR 재변환
+        </button>
+      </div>
+
+      <!-- Right Ergonomics & View Settings -->
+      <div class="toolbar-group">
+        <button class="btn" id="wordWrapBtn" title="자동 줄바꿈 켜기/끄기 (Alt + Z)">
+          자동 줄바꿈
+        </button>
+
+        <button class="btn active" id="autoPairsBtn" title="괄호 및 따옴표 자동 닫기">
+          괄호 자동닫기
+        </button>
+
+        <select class="compact-select" id="tabSizeSelect" title="Tab 키 입력 방식">
+          <option value="2"> 공백 2칸</option>
+          <option value="4" selected>공백 4칸</option>
+          <option value="tab">탭(\t) 문자</option>
+        </select>
+
+        <select class="compact-select" id="fontSizeSelect" title="글꼴 크기">
+          <option value="12">12px</option>
+          <option value="14" selected>14px</option>
+          <option value="16">16px</option>
+          <option value="18">18px</option>
+          <option value="20">20px</option>
+        </select>
+
+        <div class="divider"></div>
+
+        <button class="btn" id="clearCacheBtn" title="로컬 스토리지 세션 초기화">
+          캐시 비우기
+        </button>
+
+        <button class="btn" id="themeToggleBtn" title="라이트 / 다크 테마 전환">
+          <svg id="themeIcon" viewBox="0 0 24 24">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Multi-Tab Bar -->
+    <nav class="tab-bar-wrap">
+      <div class="tab-list" id="tabList"></div>
+      <button class="tab-add-btn" id="quickAddTabBtn" title="새 탭 추가 (Alt + N)">+</button>
+    </nav>
+
+    <!-- Collapsible Find & Replace Bar -->
+    <section class="find-bar" id="findBar">
+      <div class="find-group">
+        <input type="text" class="find-input" id="findInput" placeholder="찾을 내용 (Enter / Shift+Enter)">
+        <button class="btn" id="caseSensitiveBtn" title="대소문자 구분 (Aa)">Aa</button>
+        <button class="btn" id="regexToggleBtn" title="정규표현식 사용 (.*)">.*</button>
+        <span class="find-count" id="findCountLabel">0 / 0</span>
+        <button class="btn" id="findPrevBtn" title="이전 찾기 (Shift + Enter)">▲ 이전</button>
+        <button class="btn" id="findNextBtn" title="다음 찾기 (Enter)">▼ 다음</button>
+      </div>
+
+      <div class="find-group">
+        <input type="text" class="find-input" id="replaceInput" placeholder="바꿀 내용">
+        <button class="btn" id="replaceOneBtn">바꾸기</button>
+        <button class="btn" id="replaceAllBtn">모두 바꾸기</button>
+        <button class="btn" id="closeFindBtn" title="닫기 (Esc)">✕</button>
+      </div>
+    </section>
+
+    <!-- Main Editor Area (Line Gutter + Pure Textarea) -->
+    <main class="workspace" id="workspace">
+      <div class="gutter" id="lineGutter">1</div>
+      <textarea id="editorTextarea" class="editor-textarea" spellcheck="false" autocapitalize="off" autocomplete="off"
+        autocorrect="off" placeholder="여기에 텍스트를 입력하거나 파일을 드래그 앤 드롭하세요..."></textarea>
+
+      <!-- Drag & Drop Visual Cue -->
+      <div class="drop-overlay" id="dropOverlay">
+        <div class="drop-overlay-title">파일을 놓아서 새 탭으로 열기</div>
+        <div class="drop-overlay-sub">여러 개의 텍스트 파일을 동시에 드롭할 수 있습니다 (UTF-8 / EUC-KR 자동 감지)</div>
+      </div>
+    </main>
+
+    <!-- Bottom Status Bar -->
+    <footer class="status-bar">
+      <div class="status-section">
+        <div class="status-item">
+          <span class="status-dot" id="cacheDot"></span>
+          <span id="cacheStatusText">캐시 동기화됨</span>
+        </div>
+        <div class="status-item" id="fileHandleStatus">로컬 버퍼 (미연결)</div>
+      </div>
+
+      <div class="status-section">
+        <div class="status-item" id="cursorPosInfo">줄 1, 칸 1</div>
+        <div class="status-item" id="charCountInfo">0 글자</div>
+        <div class="status-item" id="byteSizeInfo">0 B</div>
+        <div class="status-item clickable" id="lineEndingToggle" title="클릭하여 줄바꿈 문자(LF / CRLF) 전환">LF</div>
+        <div class="status-item" id="encodingBadge">UTF-8</div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Hidden File Input Fallback for browsers without File System Access API -->
+  <input type="file" id="fallbackFileInput" multiple style="display: none;">
+
+  <!-- Custom Modal Dialog -->
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal-card">
+      <div class="modal-title" id="modalTitle">알림</div>
+      <div class="modal-desc" id="modalDesc">내용</div>
+      <input type="text" class="modal-input" id="modalInput" style="display: none;">
+      <div class="modal-actions" id="modalActions"></div>
+    </div>
+  </div>
+
+  <!-- Toast Feedback -->
+  <div class="toast" id="toastBox">저장되었습니다.</div>
+
+  <script>
+    /**
+     * FeatherNote - Pure Web API Lightweight UTF-8 Text Editor
+     * Features:
+     * - File System Access API (In-place Save, Open, Save As) + Input/Anchor Fallbacks
+     * - Multi-tab management + localStorage automatic session recovery
+     * - UTF-8 strict decoding with automatic EUC-KR (CP949) fallback for legacy Korean files
+     * - Synchronized Line Number Gutter, Word Wrap, Auto-closing brackets, Block Tab Indentation
+     * - Find & Replace with Regular Expression & Case-Sensitivity support
+     */
+
+    const STORAGE_KEY = 'feathernote_utf8_session_v1';
+
+    // DOM References
+    const tabListEl = document.getElementById('tabList');
+    const textarea = document.getElementById('editorTextarea');
+    const gutter = document.getElementById('lineGutter');
+    const workspace = document.getElementById('workspace');
+    const dropOverlay = document.getElementById('dropOverlay');
+    const fallbackFileInput = document.getElementById('fallbackFileInput');
+    const redecodeEucKrBtn = document.getElementById('redecodeEucKrBtn');
+
+    // Find & Replace DOM
+    const findBar = document.getElementById('findBar');
+    const findInput = document.getElementById('findInput');
+    const replaceInput = document.getElementById('replaceInput');
+    const findCountLabel = document.getElementById('findCountLabel');
+    const caseSensitiveBtn = document.getElementById('caseSensitiveBtn');
+    const regexToggleBtn = document.getElementById('regexToggleBtn');
+
+    // Status Bar DOM
+    const cacheDot = document.getElementById('cacheDot');
+    const cacheStatusText = document.getElementById('cacheStatusText');
+    const fileHandleStatus = document.getElementById('fileHandleStatus');
+    const cursorPosInfo = document.getElementById('cursorPosInfo');
+    const charCountInfo = document.getElementById('charCountInfo');
+    const byteSizeInfo = document.getElementById('byteSizeInfo');
+    const lineEndingToggle = document.getElementById('lineEndingToggle');
+    const encodingBadge = document.getElementById('encodingBadge');
+
+    // Encoder instance for exact UTF-8 byte calculation
+    const utf8Encoder = new TextEncoder();
+
+    // Application State
+    let tabs = [];
+    let activeTabId = null;
+    let untitledSeq = 1;
+    let renderedLineCount = 0;
+
+    let settings = {
+      theme: 'light',
+      wordWrap: false,
+      autoPairs: true,
+      tabSize: '4',
+      fontSize: 14,
+      findCaseSensitive: false,
+      findRegex: false
+    };
+
+    let findMatches = [];
+    let currentMatchIndex = -1;
+
+    // --- Initialization & Session Recovery ---
+    function init() {
+      loadSessionFromCache();
+
+      if (tabs.length === 0) {
+        createNewTab('untitled-1.txt', '');
+      } else {
+        const targetId = tabs.some(t => t.id === activeTabId) ? activeTabId : tabs[0].id;
+        switchTab(targetId, false);
+      }
+
+      applySettingsToUI();
+      renderTabs();
+      updateGutter(true);
+      updateStatusBar();
+    }
+
+    function generateId() {
+      return 'tab_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 7);
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toastBox');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      clearTimeout(toast._timer);
+      toast._timer = setTimeout(() => toast.classList.remove('show'), 2300);
+    }
+
+    // --- Custom Non-blocking Modal ---
+    function showModal({ title, desc, inputDefault = null, buttons = [] }) {
+      return new Promise((resolve) => {
+        const backdrop = document.getElementById('modalBackdrop');
+        const titleEl = document.getElementById('modalTitle');
+        const descEl = document.getElementById('modalDesc');
+        const inputEl = document.getElementById('modalInput');
+        const actionsEl = document.getElementById('modalActions');
+
+        titleEl.textContent = title;
+        descEl.textContent = desc;
+
+        if (inputDefault !== null) {
+          inputEl.style.display = 'block';
+          inputEl.value = inputDefault;
+        } else {
+          inputEl.style.display = 'none';
+        }
+
+        actionsEl.innerHTML = '';
+        buttons.forEach(btnCfg => {
+          const b = document.createElement('button');
+          b.className = `btn ${btnCfg.primary ? 'btn-primary' : ''}`;
+          if (btnCfg.danger) b.style.color = 'var(--danger)';
+          b.textContent = btnCfg.label;
+          b.addEventListener('click', () => {
+            backdrop.classList.remove('open');
+            resolve({ action: btnCfg.value, inputValue: inputEl.value });
+          });
+          actionsEl.appendChild(b);
+        });
+
+        backdrop.classList.add('open');
+        if (inputDefault !== null) {
+          setTimeout(() => {
+            inputEl.focus();
+            inputEl.select();
+          }, 20);
+        }
+      });
+    }
+
+    // --- LocalStorage Session Cache ---
+    let saveCacheTimer = null;
+
+    function scheduleCacheSync() {
+      cacheDot.style.background = 'var(--warning)';
+      cacheStatusText.textContent = '캐시 저장 중...';
+      clearTimeout(saveCacheTimer);
+      saveCacheTimer = setTimeout(() => {
+        saveSessionToCache();
+      }, 350);
+    }
+
+    function saveSessionToCache() {
+      syncActiveTabState();
+      try {
+        const serializableTabs = tabs.map(t => ({
+          id: t.id,
+          name: t.name,
+          content: t.content,
+          savedContent: t.savedContent,
+          selectionStart: t.selectionStart,
+          selectionEnd: t.selectionEnd,
+          scrollTop: t.scrollTop,
+          scrollLeft: t.scrollLeft,
+          lineEnding: t.lineEnding || 'LF',
+          sourceEncoding: t.sourceEncoding || 'UTF-8'
+        }));
+
+        const payload = JSON.stringify({
+          activeTabId,
+          untitledSeq,
+          settings,
+          tabs: serializableTabs
+        });
+
+        localStorage.setItem(STORAGE_KEY, payload);
+        const kb = (utf8Encoder.encode(payload).length / 1024).toFixed(1);
+        cacheDot.style.background = 'var(--success)';
+        cacheStatusText.textContent = `캐시 동기화됨 (${kb} KB)`;
+      } catch (e) {
+        cacheDot.style.background = 'var(--danger)';
+        cacheStatusText.textContent = '캐시 용량 초과';
+      }
+    }
+
+    function loadSessionFromCache() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (parsed.settings) {
+          settings = { ...settings, ...parsed.settings };
+        }
+        if (typeof parsed.untitledSeq === 'number') {
+          untitledSeq = parsed.untitledSeq;
+        }
+        if (Array.isArray(parsed.tabs) && parsed.tabs.length > 0) {
+          tabs = parsed.tabs.map(t => ({
+            ...t,
+            fileHandle: null, // Security policy: FileSystemFileHandle cannot be stored in localStorage
+            rawBuffer: null
+          }));
+          activeTabId = parsed.activeTabId;
+        }
+      } catch (e) {
+        console.warn('Failed to load session cache:', e);
+      }
+    }
+
+    document.getElementById('clearCacheBtn').addEventListener('click', async () => {
+      const res = await showModal({
+        title: '로컬 캐시 초기화',
+        desc: '브라우저에 저장된 모든 탭 세션과 설정을 초기화하시겠습니까? 저장하지 않은 텍스트는 삭제됩니다.',
+        buttons: [
+          { label: '취소', value: 'cancel' },
+          { label: '초기화', value: 'confirm', danger: true }
+        ]
+      });
+
+      if (res.action === 'confirm') {
+        localStorage.removeItem(STORAGE_KEY);
+        tabs = [];
+        untitledSeq = 1;
+        createNewTab('untitled-1.txt', '');
+        showToast('로컬 스토리지 캐시가 초기화되었습니다.');
+      }
+    });
+
+    // --- Tab Management ---
+    function getActiveTab() {
+      return tabs.find(t => t.id === activeTabId) || null;
+    }
+
+    function isTabModified(tab) {
+      return tab.content !== tab.savedContent;
+    }
+
+    function syncActiveTabState() {
+      const current = getActiveTab();
+      if (!current) return;
+      current.content = textarea.value;
+      current.selectionStart = textarea.selectionStart;
+      current.selectionEnd = textarea.selectionEnd;
+      current.scrollTop = textarea.scrollTop;
+      current.scrollLeft = textarea.scrollLeft;
+    }
+
+    function createNewTab(name = null, content = '', fileHandle = null, sourceEncoding = 'UTF-8', rawBuffer = null) {
+      syncActiveTabState();
+
+      if (!name) {
+        name = `untitled-${untitledSeq++}.txt`;
+      }
+
+      const detectedCRLF = content.includes('\r\n');
+      const normalizedContent = content.replace(/\r\n/g, '\n');
+
+      const newTab = {
+        id: generateId(),
+        name,
+        content: normalizedContent,
+        savedContent: normalizedContent,
+        fileHandle,
+        rawBuffer,
+        sourceEncoding,
+        lineEnding: detectedCRLF ? 'CRLF' : 'LF',
+        selectionStart: 0,
+        selectionEnd: 0,
+        scrollTop: 0,
+        scrollLeft: 0
+      };
+
+      tabs.push(newTab);
+      switchTab(newTab.id);
+      scheduleCacheSync();
+      return newTab;
+    }
+
+    function switchTab(tabId, syncCurrent = true) {
+      if (syncCurrent) syncActiveTabState();
+
+      const target = tabs.find(t => t.id === tabId);
+      if (!target) return;
+
+      activeTabId = target.id;
+      textarea.value = target.content;
+      textarea.focus();
+      textarea.setSelectionRange(target.selectionStart || 0, target.selectionEnd || 0);
+      textarea.scrollTop = target.scrollTop || 0;
+      textarea.scrollLeft = target.scrollLeft || 0;
+      gutter.scrollTop = textarea.scrollTop;
+
+      // Show EUC-KR re-decode button if rawBuffer is present in memory
+      redecodeEucKrBtn.style.display = target.rawBuffer ? 'inline-flex' : 'none';
+
+      renderTabs();
+      updateGutter(true);
+      updateStatusBar();
+      if (findBar.classList.contains('open')) {
+        runFind(false);
+      }
+      scheduleCacheSync();
+    }
+
+    async function closeTab(tabId, e = null) {
+      if (e) e.stopPropagation();
+      const idx = tabs.findIndex(t => t.id === tabId);
+      if (idx === -1) return;
+
+      const tab = tabs[idx];
+      if (tab.id === activeTabId) syncActiveTabState();
+
+      if (isTabModified(tab)) {
+        const res = await showModal({
+          title: '변경 내용 저장 확인',
+          desc: `'${tab.name}' 파일에 저장하지 않은 변경 사항이 있습니다. 저장하시겠습니까?`,
+          buttons: [
+            { label: '취소', value: 'cancel' },
+            { label: '저장 안 함', value: 'discard', danger: true },
+            { label: '저장 후 닫기', value: 'save', primary: true }
+          ]
+        });
+
+        if (res.action === 'cancel') return;
+        if (res.action === 'save') {
+          switchTab(tab.id);
+          const saved = await saveActiveFile(false);
+          if (!saved) return;
+        }
+      }
+
+      tabs.splice(idx, 1);
+
+      if (tabs.length === 0) {
+        untitledSeq = 1;
+        createNewTab('untitled-1.txt', '');
+      } else if (activeTabId === tabId) {
+        const nextIdx = Math.min(idx, tabs.length - 1);
+        switchTab(tabs[nextIdx].id, false);
+      } else {
+        renderTabs();
+        scheduleCacheSync();
+      }
+    }
+
+    async function renameTabPrompt(tab) {
+      const res = await showModal({
+        title: '탭 파일명 변경',
+        desc: '저장할 파일 이름을 입력하세요:',
+        inputDefault: tab.name,
+        buttons: [
+          { label: '취소', value: 'cancel' },
+          { label: '변경', value: 'ok', primary: true }
+        ]
+      });
+
+      if (res.action === 'ok' && res.inputValue.trim()) {
+        tab.name = res.inputValue.trim();
+        renderTabs();
+        updateStatusBar();
+        scheduleCacheSync();
+      }
+    }
+
+    function renderTabs() {
+      tabListEl.innerHTML = '';
+      tabs.forEach(tab => {
+        const el = document.createElement('div');
+        const isMod = isTabModified(tab);
+        el.className = `tab ${tab.id === activeTabId ? 'active' : ''} ${isMod ? 'modified' : ''}`;
+        el.title = `${tab.name}${tab.fileHandle ? ' (디스크 연결됨 - Ctrl+S 즉시 저장)' : ''}\n더블클릭하여 이름 변경`;
+
+        const dirtyDot = document.createElement('span');
+        dirtyDot.className = 'tab-dirty';
+
+        const titleSpan = document.createElement('span');
+        titleSpan.className = 'tab-title';
+        titleSpan.textContent = tab.name;
+
+        el.appendChild(dirtyDot);
+        el.appendChild(titleSpan);
+
+        if (tab.fileHandle) {
+          const badge = document.createElement('span');
+          badge.className = 'tab-handle-badge';
+          badge.textContent = 'DISK';
+          el.appendChild(badge);
+        }
+
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'tab-close';
+        closeBtn.innerHTML = '&times;';
+        closeBtn.title = '탭 닫기 (Ctrl + W)';
+        closeBtn.addEventListener('click', (ev) => closeTab(tab.id, ev));
+
+        el.appendChild(closeBtn);
+
+        el.addEventListener('click', () => {
+          if (tab.id !== activeTabId) switchTab(tab.id);
+        });
+
+        el.addEventListener('auxclick', (ev) => {
+          if (ev.button === 1) closeTab(tab.id, ev);
+        });
+
+        el.addEventListener('dblclick', () => renameTabPrompt(tab));
+
+        tabListEl.appendChild(el);
+      });
+    }
+
+    // --- File I/O (File System Access API + UTF-8 / EUC-KR Decoder) ---
+    async function decodeFileBuffer(arrayBuffer) {
+      try {
+        const utf8Decoder = new TextDecoder('utf-8', { fatal: true });
+        const text = utf8Decoder.decode(arrayBuffer);
+        return { text, encoding: 'UTF-8' };
+      } catch (err) {
+        // Automatic fallback for legacy Korean CP949 / EUC-KR text files
+        const eucKrDecoder = new TextDecoder('euc-kr');
+        const text = eucKrDecoder.decode(arrayBuffer);
+        showToast('EUC-KR(CP949) 인코딩을 감지하여 자동 변환했습니다. 저장 시 UTF-8로 저장됩니다.');
+        return { text, encoding: 'EUC-KR → UTF-8' };
+      }
+    }
+
+    async function openFilesAction() {
+      if ('showOpenFilePicker' in window) {
+        try {
+          const handles = await window.showOpenFilePicker({
+            multiple: true
+          });
+          for (const handle of handles) {
+            const file = await handle.getFile();
+            const buffer = await file.arrayBuffer();
+            const { text, encoding } = await decodeFileBuffer(buffer);
+            createNewTab(file.name, text, handle, encoding, buffer);
+          }
+          return;
+        } catch (err) {
+          if (err.name === 'AbortError') return;
+        }
+      }
+      // Fallback for Firefox/Safari or restricted iframe contexts
+      fallbackFileInput.value = '';
+      fallbackFileInput.click();
+    }
+
+    fallbackFileInput.addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files || []);
+      for (const file of files) {
+        const buffer = await file.arrayBuffer();
+        const { text, encoding } = await decodeFileBuffer(buffer);
+        createNewTab(file.name, text, null, encoding, buffer);
+      }
+    });
+
+    // Manual re-decode as EUC-KR if needed
+    redecodeEucKrBtn.addEventListener('click', () => {
+      const tab = getActiveTab();
+      if (!tab || !tab.rawBuffer) return;
+      const decoder = new TextDecoder('euc-kr');
+      const text = decoder.decode(tab.rawBuffer).replace(/\r\n/g, '\n');
+      tab.content = text;
+      tab.savedContent = text;
+      tab.sourceEncoding = 'EUC-KR → UTF-8';
+      textarea.value = text;
+      updateGutter(true);
+      updateStatusBar();
+      renderTabs();
+      showToast('현재 파일을 EUC-KR 인코딩으로 다시 읽었습니다.');
+    });
+
+    function getFormattedSaveText(tab) {
+      const raw = tab.content.replace(/\r\n/g, '\n');
+      return tab.lineEnding === 'CRLF' ? raw.replace(/\n/g, '\r\n') : raw;
+    }
+
+    async function saveActiveFile(forceSaveAs = false) {
+      syncActiveTabState();
+      const tab = getActiveTab();
+      if (!tab) return false;
+
+      const outputText = getFormattedSaveText(tab);
+
+      // 1. In-place overwrite if FileSystemFileHandle is attached and not Save As
+      if (tab.fileHandle && !forceSaveAs) {
+        try {
+          const writable = await tab.fileHandle.createWritable();
+          await writable.write(outputText);
+          await writable.close();
+          tab.savedContent = tab.content;
+          tab.sourceEncoding = 'UTF-8';
+          renderTabs();
+          updateStatusBar();
+          scheduleCacheSync();
+          showToast(`'${tab.name}' 원본 파일에 덮어쓰기 저장되었습니다.`);
+          return true;
+        } catch (err) {
+          console.warn('In-place write failed, falling back to Save As:', err);
+        }
+      }
+
+      // 2. Save As using showSaveFilePicker if supported
+      if ('showSaveFilePicker' in window) {
+        try {
+          const handle = await window.showSaveFilePicker({
+            suggestedName: tab.name,
+            types: [
+              {
+                description: 'UTF-8 Text File',
+                accept: { 'text/plain': ['.txt', '.md', '.json', '.js', '.py', '.html', '.css', '.csv', '.log'] }
+              }
+            ]
+          });
+          const writable = await handle.createWritable();
+          await writable.write(outputText);
+          await writable.close();
+
+          tab.fileHandle = handle;
+          tab.name = handle.name || tab.name;
+          tab.savedContent = tab.content;
+          tab.sourceEncoding = 'UTF-8';
+          renderTabs();
+          updateStatusBar();
+          scheduleCacheSync();
+          showToast(`'${tab.name}' 파일로 저장되었습니다.`);
+          return true;
+        } catch (err) {
+          if (err.name === 'AbortError') return false;
+        }
+      }
+
+      // 3. Fallback download via Blob & Anchor
+      const blob = new Blob([outputText], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = tab.name || 'untitled.txt';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+
+      tab.savedContent = tab.content;
+      tab.sourceEncoding = 'UTF-8';
+      renderTabs();
+      updateStatusBar();
+      scheduleCacheSync();
+      showToast(`'${tab.name}' 파일이 다운로드되었습니다.`);
+      return true;
+    }
+
+    // --- Drag & Drop Multi-File Support ---
+    window.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropOverlay.classList.add('active');
+    });
+
+    window.addEventListener('dragleave', (e) => {
+      if (e.relatedTarget === null || !document.body.contains(e.relatedTarget)) {
+        dropOverlay.classList.remove('active');
+      }
+    });
+
+    window.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      dropOverlay.classList.remove('active');
+
+      const items = Array.from(e.dataTransfer?.items || []);
+      if (items.length === 0) return;
+
+      for (const item of items) {
+        if (item.kind !== 'file') continue;
+
+        let handle = null;
+        if ('getAsFileSystemHandle' in item) {
+          try {
+            const h = await item.getAsFileSystemHandle();
+            if (h && h.kind === 'file') handle = h;
+          } catch (_) { }
+        }
+
+        const file = handle ? await handle.getFile() : item.getAsFile();
+        if (!file) continue;
+
+        const buffer = await file.arrayBuffer();
+        const { text, encoding } = await decodeFileBuffer(buffer);
+        createNewTab(file.name, text, handle, encoding, buffer);
+      }
+    });
+
+    // --- Line Number Gutter & Editor Sync ---
+    function updateGutter(force = false) {
+      const val = textarea.value;
+      let count = 1;
+      for (let i = 0; i < val.length; i++) {
+        if (val.charCodeAt(i) === 10) count++;
+      }
+
+      if (force || count !== renderedLineCount) {
+        renderedLineCount = count;
+        const lines = new Array(count);
+        for (let i = 0; i < count; i++) {
+          lines[i] = i + 1;
+        }
+        gutter.textContent = lines.join('\n');
+      }
+    }
+
+    textarea.addEventListener('scroll', () => {
+      gutter.scrollTop = textarea.scrollTop;
+    });
+
+    textarea.addEventListener('input', () => {
+      const tab = getActiveTab();
+      if (tab) {
+        const wasModified = isTabModified(tab);
+        tab.content = textarea.value;
+        const nowModified = isTabModified(tab);
+        if (wasModified !== nowModified) {
+          renderTabs();
+        }
+      }
+      updateGutter();
+      updateStatusBar();
+      scheduleCacheSync();
+
+      if (findBar.classList.contains('open')) {
+        runFind(false);
+      }
+    });
+
+    // --- Cursor & Status Bar Metrics ---
+    function updateStatusBar() {
+      const tab = getActiveTab();
+      const val = textarea.value;
+      const selStart = textarea.selectionStart || 0;
+      const selEnd = textarea.selectionEnd || 0;
+
+      // Calculate Line and Column
+      let line = 1;
+      let lastNewLineIdx = -1;
+      for (let i = 0; i < selStart; i++) {
+        if (val.charCodeAt(i) === 10) {
+          line++;
+          lastNewLineIdx = i;
+        }
+      }
+      const col = selStart - lastNewLineIdx;
+
+      const selLen = Math.abs(selEnd - selStart);
+      cursorPosInfo.textContent = selLen > 0
+        ? `줄 ${line}, 칸 ${col} (${selLen.toLocaleString()} 선택됨)`
+        : `줄 ${line}, 칸 ${col}`;
+
+      charCountInfo.textContent = `${val.length.toLocaleString()} 글자`;
+
+      const bytes = utf8Encoder.encode(val).length;
+      byteSizeInfo.textContent = formatBytes(bytes);
+
+      if (tab) {
+        lineEndingToggle.textContent = tab.lineEnding || 'LF';
+        encodingBadge.textContent = tab.sourceEncoding || 'UTF-8';
+        fileHandleStatus.textContent = tab.fileHandle
+          ? `디스크 연결됨 (${tab.name})`
+          : '로컬 버퍼 (미연결)';
+      }
+    }
+
+    function formatBytes(bytes) {
+      if (bytes < 1024) return `${bytes} B`;
+      if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+      return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+    }
+
+    ['keyup', 'click', 'select'].forEach(evt => {
+      textarea.addEventListener(evt, updateStatusBar);
+    });
+
+    lineEndingToggle.addEventListener('click', () => {
+      const tab = getActiveTab();
+      if (!tab) return;
+      tab.lineEnding = tab.lineEnding === 'LF' ? 'CRLF' : 'LF';
+      updateStatusBar();
+      scheduleCacheSync();
+      showToast(`저장 시 줄바꿈 방식이 ${tab.lineEnding}로 설정되었습니다.`);
+    });
+
+    // --- Coding & Markdown Ergonomics (Tab Indentation & Auto-pairs) ---
+    const PAIR_MAP = {
+      '(': ')',
+      '{': '}',
+      '[': ']',
+      '"': '"',
+      "'": "'",
+      '`': '`'
+    };
+
+    textarea.addEventListener('keydown', (e) => {
+      // 1. Tab & Shift+Tab Indentation
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const indentStr = settings.tabSize === 'tab' ? '\t' : ' '.repeat(Number(settings.tabSize));
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const val = textarea.value;
+
+        if (start !== end && val.slice(start, end).includes('\n')) {
+          // Multi-line block indent / unindent
+          const lineStart = val.lastIndexOf('\n', start - 1) + 1;
+          const selectedBlock = val.slice(lineStart, end);
+          const lines = selectedBlock.split('\n');
+
+          const updatedLines = lines.map(line => {
+            if (e.shiftKey) {
+              if (line.startsWith(indentStr)) return line.slice(indentStr.length);
+              if (line.startsWith('\t')) return line.slice(1);
+              return line.replace(/^ {1,4}/, '');
+            } else {
+              return indentStr + line;
+            }
+          });
+
+          const joined = updatedLines.join('\n');
+          textarea.setRangeText(joined, lineStart, end, 'select');
+        } else if (!e.shiftKey) {
+          textarea.setRangeText(indentStr, start, end, 'end');
+        }
+
+        textarea.dispatchEvent(new Event('input'));
+        return;
+      }
+
+      // 2. Auto-closing brackets & quotes (skip during IME composition)
+      if (settings.autoPairs && !e.isComposing && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        if (PAIR_MAP[e.key]) {
+          const closeChar = PAIR_MAP[e.key];
+          const start = textarea.selectionStart;
+          const end = textarea.selectionEnd;
+
+          e.preventDefault();
+          if (start !== end) {
+            const selected = textarea.value.slice(start, end);
+            textarea.setRangeText(e.key + selected + closeChar, start, end, 'select');
+            textarea.setSelectionRange(start + 1, end + 1);
+          } else {
+            textarea.setRangeText(e.key + closeChar, start, end, 'end');
+            textarea.setSelectionRange(start + 1, start + 1);
+          }
+          textarea.dispatchEvent(new Event('input'));
+        }
+      }
+    });
+
+    // --- Find & Replace Engine ---
+    function toggleFindBar(forceOpen = null) {
+      const isOpen = findBar.classList.contains('open');
+      const nextState = forceOpen !== null ? forceOpen : !isOpen;
+      if (nextState) {
+        findBar.classList.add('open');
+        const sel = textarea.value.slice(textarea.selectionStart, textarea.selectionEnd);
+        if (sel && !sel.includes('\n')) {
+          findInput.value = sel;
+        }
+        findInput.focus();
+        findInput.select();
+        runFind(false);
+      } else {
+        findBar.classList.remove('open');
+        textarea.focus();
+      }
+    }
+
+    function buildSearchRegex(query) {
+      if (!query) return null;
+      const flags = settings.findCaseSensitive ? 'g' : 'gi';
+      try {
+        const pattern = settings.findRegex
+          ? query
+          : query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        return new RegExp(pattern, flags);
+      } catch (_) {
+        return null;
+      }
+    }
+
+    function runFind(jumpToMatch = true, direction = 1) {
+      const query = findInput.value;
+      findMatches = [];
+      currentMatchIndex = -1;
+
+      if (!query) {
+        findCountLabel.textContent = '0 / 0';
+        return;
+      }
+
+      const regex = buildSearchRegex(query);
+      if (!regex) {
+        findCountLabel.textContent = '정규식 오류';
+        return;
+      }
+
+      const text = textarea.value;
+      let m;
+      while ((m = regex.exec(text)) !== null) {
+        if (m[0].length === 0) {
+          regex.lastIndex++;
+          continue;
+        }
+        findMatches.push({ index: m.index, length: m[0].length });
+        if (findMatches.length > 10000) break;
+      }
+
+      if (findMatches.length === 0) {
+        findCountLabel.textContent = '결과 없음';
+        return;
+      }
+
+      const cursor = direction >= 0 ? textarea.selectionEnd : textarea.selectionStart;
+      if (direction >= 0) {
+        currentMatchIndex = findMatches.findIndex(item => item.index >= cursor);
+        if (currentMatchIndex === -1) currentMatchIndex = 0;
+      } else {
+        for (let i = findMatches.length - 1; i >= 0; i--) {
+          if (findMatches[i].index < cursor) {
+            currentMatchIndex = i;
+            break;
+          }
+        }
+        if (currentMatchIndex === -1) currentMatchIndex = findMatches.length - 1;
+      }
+
+      findCountLabel.textContent = `${currentMatchIndex + 1} / ${findMatches.length}`;
+
+      if (jumpToMatch) {
+        const target = findMatches[currentMatchIndex];
+        textarea.focus();
+        textarea.setSelectionRange(target.index, target.index + target.length);
+        scrollTextareaToSelection(target.index);
+        updateStatusBar();
+      }
+    }
+
+    function scrollTextareaToSelection(charIndex) {
+      const textBefore = textarea.value.slice(0, charIndex);
+      const lineNum = textBefore.split('\n').length;
+      const lineHeight = parseFloat(getComputedStyle(textarea).lineHeight) || 22;
+      const targetY = Math.max(0, (lineNum - 4) * lineHeight);
+      textarea.scrollTop = targetY;
+    }
+
+    findInput.addEventListener('input', () => runFind(false));
+    findInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        runFind(true, e.shiftKey ? -1 : 1);
+      } else if (e.key === 'Escape') {
+        toggleFindBar(false);
+      }
+    });
+
+    document.getElementById('findNextBtn').addEventListener('click', () => runFind(true, 1));
+    document.getElementById('findPrevBtn').addEventListener('click', () => runFind(true, -1));
+    document.getElementById('closeFindBtn').addEventListener('click', () => toggleFindBar(false));
+
+    caseSensitiveBtn.addEventListener('click', () => {
+      settings.findCaseSensitive = !settings.findCaseSensitive;
+      caseSensitiveBtn.classList.toggle('active', settings.findCaseSensitive);
+      runFind(false);
+      scheduleCacheSync();
+    });
+
+    regexToggleBtn.addEventListener('click', () => {
+      settings.findRegex = !settings.findRegex;
+      regexToggleBtn.classList.toggle('active', settings.findRegex);
+      runFind(false);
+      scheduleCacheSync();
+    });
+
+    document.getElementById('replaceOneBtn').addEventListener('click', () => {
+      if (findMatches.length === 0) {
+        runFind(true, 1);
+        return;
+      }
+      const idx = currentMatchIndex >= 0 ? currentMatchIndex : 0;
+      const match = findMatches[idx];
+      if (!match) return;
+
+      const replacement = replaceInput.value;
+      textarea.focus();
+      textarea.setRangeText(replacement, match.index, match.index + match.length, 'end');
+      textarea.dispatchEvent(new Event('input'));
+      runFind(true, 1);
+    });
+
+    document.getElementById('replaceAllBtn').addEventListener('click', () => {
+      const query = findInput.value;
+      const regex = buildSearchRegex(query);
+      if (!regex) return;
+
+      const count = findMatches.length;
+      if (count === 0) return;
+
+      textarea.value = textarea.value.replace(regex, replaceInput.value);
+      textarea.dispatchEvent(new Event('input'));
+      showToast(`총 ${count}개 항목을 모두 바꾸었습니다.`);
+    });
+
+    // --- Toolbar & Settings Bindings ---
+    function applySettingsToUI() {
+      document.documentElement.setAttribute('data-theme', settings.theme);
+      textarea.classList.toggle('word-wrap', settings.wordWrap);
+      document.getElementById('wordWrapBtn').classList.toggle('active', settings.wordWrap);
+      document.getElementById('autoPairsBtn').classList.toggle('active', settings.autoPairs);
+      caseSensitiveBtn.classList.toggle('active', settings.findCaseSensitive);
+      regexToggleBtn.classList.toggle('active', settings.findRegex);
+
+      document.getElementById('tabSizeSelect').value = String(settings.tabSize);
+      document.getElementById('fontSizeSelect').value = String(settings.fontSize);
+
+      const fontPx = Number(settings.fontSize) || 14;
+      const linePx = Math.round(fontPx * 1.55);
+      document.documentElement.style.setProperty('--font-size', `${fontPx}px`);
+      document.documentElement.style.setProperty('--line-height', `${linePx}px`);
+    }
+
+    document.getElementById('newTabBtn').addEventListener('click', () => createNewTab());
+    document.getElementById('quickAddTabBtn').addEventListener('click', () => createNewTab());
+    document.getElementById('openFileBtn').addEventListener('click', openFilesAction);
+    document.getElementById('saveFileBtn').addEventListener('click', () => saveActiveFile(false));
+    document.getElementById('saveAsFileBtn').addEventListener('click', () => saveActiveFile(true));
+    document.getElementById('toggleFindBtn').addEventListener('click', () => toggleFindBar());
+
+    document.getElementById('wordWrapBtn').addEventListener('click', () => {
+      settings.wordWrap = !settings.wordWrap;
+      applySettingsToUI();
+      scheduleCacheSync();
+    });
+
+    document.getElementById('autoPairsBtn').addEventListener('click', () => {
+      settings.autoPairs = !settings.autoPairs;
+      applySettingsToUI();
+      scheduleCacheSync();
+    });
+
+    document.getElementById('tabSizeSelect').addEventListener('change', (e) => {
+      settings.tabSize = e.target.value;
+      scheduleCacheSync();
+    });
+
+    document.getElementById('fontSizeSelect').addEventListener('change', (e) => {
+      settings.fontSize = Number(e.target.value);
+      applySettingsToUI();
+      scheduleCacheSync();
+    });
+
+    document.getElementById('themeToggleBtn').addEventListener('click', () => {
+      settings.theme = settings.theme === 'light' ? 'dark' : 'light';
+      applySettingsToUI();
+      scheduleCacheSync();
+    });
+
+    // --- Global Keyboard Shortcuts ---
+    window.addEventListener('keydown', (e) => {
+      const key = e.key.toLowerCase();
+      const ctrlOrMeta = e.ctrlKey || e.metaKey;
+
+      if (ctrlOrMeta && key === 's') {
+        e.preventDefault();
+        saveActiveFile(e.shiftKey);
+      } else if (ctrlOrMeta && key === 'o') {
+        e.preventDefault();
+        openFilesAction();
+      } else if ((e.altKey && key === 'n') || (ctrlOrMeta && key === 'n')) {
+        e.preventDefault();
+        createNewTab();
+      } else if (ctrlOrMeta && key === 'w') {
+        e.preventDefault();
+        if (activeTabId) closeTab(activeTabId);
+      } else if (ctrlOrMeta && (key === 'f' || key === 'h')) {
+        e.preventDefault();
+        toggleFindBar(true);
+        if (key === 'h') replaceInput.focus();
+      } else if (e.altKey && key === 'z') {
+        e.preventDefault();
+        document.getElementById('wordWrapBtn').click();
+      } else if (e.key === 'F3') {
+        e.preventDefault();
+        if (!findBar.classList.contains('open')) toggleFindBar(true);
+        runFind(true, e.shiftKey ? -1 : 1);
+      }
+    });
+
+    // Warn before closing browser window only if localStorage failed
+    window.addEventListener('beforeunload', () => {
+      saveSessionToCache();
+    });
+
+    window.onload = init;
+  </script>
+</body>
+
+</html>

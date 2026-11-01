@@ -1,0 +1,1467 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Mini Calculator</title>
+  <style>
+    :root {
+      --bg-outer: #e2e8f0;
+      --bg-chassis: #ffffff;
+      --bg-display: #f8fafc;
+      --bg-history: #f1f5f9;
+      --bg-key: #ffffff;
+      --bg-key-hover: #f1f5f9;
+      --bg-key-func: #f1f5f9;
+      --bg-key-op: #eff6ff;
+      --bg-key-eq: #2563eb;
+      --bg-key-eq-hover: #1d4ed8;
+      --border: #e2e8f0;
+      --border-strong: #cbd5e1;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --text-op: #2563eb;
+      --text-danger: #ef4444;
+      --bg-danger-soft: #fef2f2;
+      --primary: #2563eb;
+      --primary-soft: #dbeafe;
+      --shadow-chassis: 0 25px 50px -12px rgba(15, 23, 42, 0.18), 0 0 0 1px rgba(15, 23, 42, 0.06);
+      --shadow-key: 0 2px 0 rgba(15, 23, 42, 0.06);
+      --mono-font: 'JetBrains Mono', 'SF Mono', 'D2Coding', 'Consolas', monospace;
+      --sans-font: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Malgun Gothic', sans-serif;
+    }
+
+    [data-theme="dark"] {
+      --bg-outer: #181818;
+      --bg-chassis: #32353b;
+      --bg-display: #1e293b;
+      --bg-history: #090d16;
+      --bg-key: #1e293b;
+      --bg-key-hover: #334155;
+      --bg-key-func: #151f32;
+      --bg-key-op: #172554;
+      --bg-key-eq: #a5a5a5;
+      --bg-key-eq-hover: #60a5fa;
+      --border: #334155;
+      --border-strong: #475569;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-op: #60a5fa;
+      --text-danger: #f87171;
+      --bg-danger-soft: #2c1215;
+      --primary: #3b82f6;
+      --primary-soft: #1e3a8a;
+      --shadow-chassis: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.08);
+      --shadow-key: 0 2px 0 rgba(0, 0, 0, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html,
+    body {
+      width: 100%;
+      min-height: 100vh;
+      background-color: var(--bg-outer);
+      color: var(--text-main);
+      font-family: var(--sans-font);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    /* Mobile-First Chassis Container */
+    .chassis {
+      width: 100%;
+      max-width: 400px;
+      background: var(--bg-chassis);
+      border-radius: 28px;
+      box-shadow: var(--shadow-chassis);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    @media (max-width: 440px) {
+      body {
+        padding: 0;
+        background-color: var(--bg-chassis);
+      }
+
+      .chassis {
+        max-width: 100%;
+        min-height: 100vh;
+        border-radius: 0;
+        box-shadow: none;
+        justify-content: space-between;
+      }
+    }
+
+    /* Top Header Bar */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-logo {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: var(--primary);
+      color: #ffffff;
+      font-family: var(--mono-font);
+      font-weight: 800;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .brand-name {
+      font-size: 0.95rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .top-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .pill-btn {
+      height: 28px;
+      padding: 0 9px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-display);
+      color: var(--text-main);
+      font-size: 0.74rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.12s;
+      user-select: none;
+    }
+
+    .pill-btn:hover {
+      border-color: var(--primary);
+    }
+
+    .pill-btn.active-mode {
+      background: var(--primary-soft);
+      color: var(--primary);
+      border-color: var(--primary);
+    }
+
+    /* Mini History Tape */
+    .history-tape {
+      background: var(--bg-history);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 6px 10px;
+      max-height: 76px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-family: var(--mono-font);
+      font-size: 0.74rem;
+    }
+
+    .history-empty {
+      color: var(--text-muted);
+      text-align: center;
+      padding: 4px 0;
+      font-family: var(--sans-font);
+      font-size: 0.73rem;
+    }
+
+    .history-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 2px 4px;
+      border-radius: 5px;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: background 0.12s;
+    }
+
+    .history-item:hover {
+      background: var(--bg-key-hover);
+      color: var(--text-main);
+    }
+
+    .history-expr {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .history-val {
+      font-weight: 700;
+      color: var(--text-op);
+      flex-shrink: 0;
+    }
+
+    /* Display Screen */
+    .display-screen {
+      background: var(--bg-display);
+      border: 1.5px solid var(--border);
+      border-radius: 18px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: border-color 0.15s;
+    }
+
+    .display-screen:focus-within {
+      border-color: var(--primary);
+    }
+
+    .input-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .formula-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+    }
+
+    .ghost-parens {
+      font-family: var(--mono-font);
+      font-size: 0.72rem;
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .expr-input {
+      width: 100%;
+      border: none;
+      outline: none;
+      background: transparent;
+      color: var(--text-main);
+      font-family: var(--mono-font);
+      font-size: 1.15rem;
+      font-weight: 600;
+      text-align: right;
+      padding: 2px 0;
+    }
+
+    .expr-input::placeholder {
+      color: var(--text-muted);
+      opacity: 0.55;
+      font-size: 0.86rem;
+      font-weight: 400;
+    }
+
+    .result-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      min-height: 40px;
+      padding-top: 4px;
+      border-top: 1px dashed var(--border);
+    }
+
+    .eq-sign {
+      font-family: var(--mono-font);
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      user-select: none;
+    }
+
+    .formatted-result {
+      flex: 1;
+      text-align: right;
+      font-family: var(--mono-font);
+      font-size: 1.65rem;
+      font-weight: 800;
+      color: var(--text-main);
+      word-break: break-all;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+    }
+
+    .formatted-result.is-error {
+      font-size: 0.9rem;
+      color: var(--text-danger);
+      font-weight: 600;
+    }
+
+    /* Raw Number Copy Bar */
+    .display-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding-top: 4px;
+    }
+
+    .raw-preview {
+      font-family: var(--mono-font);
+      font-size: 0.71rem;
+      color: var(--text-muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .copy-raw-btn {
+      height: 26px;
+      padding: 0 10px;
+      border-radius: 7px;
+      border: 1px solid var(--primary);
+      background: var(--bg-key-op);
+      color: var(--text-op);
+      font-size: 0.73rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+      transition: all 0.12s;
+    }
+
+    .copy-raw-btn:hover:not(:disabled) {
+      background: var(--primary);
+      color: #ffffff;
+    }
+
+    .copy-raw-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* Quick Function Chip Strip */
+    .quick-strip {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      scrollbar-width: none;
+    }
+
+    .quick-strip::-webkit-scrollbar {
+      display: none;
+    }
+
+    .chip {
+      height: 26px;
+      padding: 0 9px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--bg-key-func);
+      color: var(--text-muted);
+      font-family: var(--mono-font);
+      font-size: 0.74rem;
+      font-weight: 600;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all 0.12s;
+    }
+
+    .chip:hover {
+      color: var(--text-op);
+      border-color: var(--primary);
+      background: var(--bg-key-op);
+    }
+
+    /* Classic 4-Column Keypad */
+    .keypad {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 9px;
+    }
+
+    .key {
+      height: 54px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--bg-key);
+      color: var(--text-main);
+      font-family: var(--mono-font);
+      font-size: 1.2rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: var(--shadow-key);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      transition: transform 0.06s ease, background 0.12s ease;
+    }
+
+    .key:hover {
+      background: var(--bg-key-hover);
+    }
+
+    .key:active {
+      transform: translateY(2px);
+      box-shadow: none;
+    }
+
+    .key-func {
+      background: var(--bg-key-func);
+      font-size: 1.02rem;
+      color: var(--text-main);
+    }
+
+    .key-op {
+      background: var(--bg-key-op);
+      color: var(--text-op);
+      font-size: 1.3rem;
+      border-color: rgba(37, 99, 235, 0.2);
+    }
+
+    .key-danger {
+      background: var(--bg-danger-soft);
+      color: var(--text-danger);
+      border-color: rgba(239, 68, 68, 0.25);
+      font-size: 1.05rem;
+    }
+
+    .key-eq {
+      background: var(--bg-key-eq);
+      color: #ffffff;
+      border-color: var(--bg-key-eq);
+      font-size: 1.35rem;
+    }
+
+    .key-eq:hover {
+      background: var(--bg-key-eq-hover);
+    }
+
+    /* Help Modal for Implicit Math Parser */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(3px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 16px;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-card {
+      width: 100%;
+      max-width: 480px;
+      max-height: 86vh;
+      background: var(--bg-chassis);
+      border: 1px solid var(--border-strong);
+      border-radius: 22px;
+      box-shadow: var(--shadow-chassis);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .modal-header {
+      padding: 14px 18px;
+      background: var(--bg-display);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .modal-title {
+      font-size: 0.95rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .modal-body {
+      padding: 16px 18px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      font-size: 0.8rem;
+      line-height: 1.5;
+    }
+
+    .guide-sec-title {
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 6px;
+    }
+
+    .guide-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+    }
+
+    .guide-table th,
+    .guide-table td {
+      padding: 7px 8px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+    }
+
+    .guide-table th {
+      color: var(--text-muted);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      background: var(--bg-history);
+    }
+
+    .syntax-badge {
+      display: inline-block;
+      font-family: var(--mono-font);
+      font-weight: 700;
+      font-size: 0.75rem;
+      padding: 2px 6px;
+      border-radius: 5px;
+      background: var(--bg-key-op);
+      color: var(--text-op);
+      cursor: pointer;
+      border: 1px solid transparent;
+    }
+
+    .syntax-badge:hover {
+      border-color: var(--primary);
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(15px);
+      background: #0f172a;
+      color: #ffffff;
+      padding: 9px 16px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.2s ease;
+      z-index: 200;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25);
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+
+<body>
+
+  <main class="chassis">
+    <!-- Top Bar -->
+    <header class="top-bar">
+      <div class="brand">
+        <div class="brand-logo">∑</div>
+        <h1 class="brand-name">Mini Calculator</h1>
+      </div>
+
+      <div class="top-controls">
+        <button class="pill-btn active-mode" id="angleModeBtn" title="삼각함수 각도 단위 전환 (Radian / Degree)">
+          RAD
+        </button>
+        <button class="pill-btn" id="openHelpBtn" title="Desmos 스타일 수식 입력 가이드 (Implicit Math Parser)">
+          ?
+        </button>
+        <button class="pill-btn" id="themeBtn" title="라이트 / 다크 모드 전환">
+          🌓
+        </button>
+      </div>
+    </header>
+
+    <!-- History Tape (Click to reuse expression or result) -->
+    <section class="history-tape" id="historyTape">
+      <div class="history-empty">계산 기록이 여기에 표시됩니다 (클릭하여 재사용)</div>
+    </section>
+
+    <!-- Display Screen -->
+    <section class="display-screen">
+      <div class="input-row">
+        <span class="formula-label">수식 입력 (Desmos 형식)</span>
+        <span class="ghost-parens" id="ghostParens" title="자동으로 닫힐 미완성 괄호"></span>
+      </div>
+
+      <input type="text" id="exprInput" class="expr-input" placeholder="예: 2pi + sin(pi/4) + 5! + 2^10"
+        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+
+      <div class="result-row">
+        <span class="eq-sign">=</span>
+        <div class="formatted-result" id="formattedResult">0</div>
+      </div>
+
+      <div class="display-actions">
+        <span class="raw-preview" id="rawPreview">결과 값: 0</span>
+        <button class="copy-raw-btn" id="copyRawBtn" title="공백 구분자가 제거된 순수 계산 숫자를 복사합니다">
+          📋 복사
+        </button>
+      </div>
+    </section>
+
+    <!-- Subtle Quick Strip for Mobile Convenience -->
+    <div class="quick-strip" aria-label="빠른 기호 입력">
+      <button class="chip" data-insert="^" title="거듭제곱 (x^y)">x^y</button>
+      <button class="chip" data-insert="pi" title="원주율 π">π</button>
+      <button class="chip" data-insert="e" title="자연상수 e">e</button>
+      <button class="chip" data-insert="sqrt(" title="제곱근">sqrt(</button>
+      <button class="chip" data-insert="sin(" title="사인">sin(</button>
+      <button class="chip" data-insert="cos(" title="코사인">cos(</button>
+      <button class="chip" data-insert="ln(" title="자연로그">ln(</button>
+      <button class="chip" data-insert="!" title="팩토리얼">n!</button>
+    </div>
+
+    <!-- Classic 4-Column Pocket Calculator Keypad -->
+    <section class="keypad" id="keypad">
+      <!-- Row 1: Clear, Parentheses, Backspace -->
+      <button class="key key-danger" data-action="clear" title="전체 지우기 (Esc)">C</button>
+      <button class="key key-func" data-insert="(">(</button>
+      <button class="key key-func" data-insert=")">)</button>
+      <button class="key key-func" data-action="backspace" title="한 글자 지우기 (Backspace)">⌫</button>
+
+      <!-- Row 2: Power, Constants & Division -->
+      <button class="key key-func" data-insert="^" title="거듭제곱 (x^y)">xʸ</button>
+      <button class="key key-func" data-insert="pi" title="원주율 π (3.141592...)">π</button>
+      <button class="key key-func" data-insert="e" title="자연상수 e (2.718281...)">e</button>
+      <button class="key key-op" data-insert="/">÷</button>
+
+      <!-- Row 3: 7 8 9 × -->
+      <button class="key" data-insert="7">7</button>
+      <button class="key" data-insert="8">8</button>
+      <button class="key" data-insert="9">9</button>
+      <button class="key key-op" data-insert="*">×</button>
+
+      <!-- Row 4: 4 5 6 - -->
+      <button class="key" data-insert="4">4</button>
+      <button class="key" data-insert="5">5</button>
+      <button class="key" data-insert="6">6</button>
+      <button class="key key-op" data-insert="-">−</button>
+
+      <!-- Row 5: 1 2 3 + -->
+      <button class="key" data-insert="1">1</button>
+      <button class="key" data-insert="2">2</button>
+      <button class="key" data-insert="3">3</button>
+      <button class="key key-op" data-insert="+">+</button>
+
+      <!-- Row 6: Ans, 0, ., = -->
+      <button class="key key-func" data-insert="ans" title="직전 계산 결과값 (Ans)">Ans</button>
+      <button class="key" data-insert="0">0</button>
+      <button class="key" data-insert=".">.</button>
+      <button class="key key-eq" data-action="evaluate" title="계산 확정 및 기록 (Enter)">=</button>
+    </section>
+  </main>
+
+  <!-- Implicit Math Parser Help Modal -->
+  <div class="modal-backdrop" id="helpModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>📘 Implicit Math Parser 수식 가이드</span>
+        </div>
+        <button class="pill-btn" id="closeHelpBtn">닫기 (Esc)</button>
+      </div>
+
+      <div class="modal-body">
+        <p style="color: var(--text-muted);">
+          키패드에 없는 공학 함수도 상단 입력창에 <b>역슬래시(\) 없이</b> 알파벳으로 타이핑하면 Desmos처럼 즉시 인식합니다. 아래 파란 배지를 클릭하면 수식에 바로 입력됩니다.
+        </p>
+
+        <div>
+          <div class="guide-sec-title">1. 상수 및 생략 곱셈 (Implicit Multiplication)</div>
+          <table class="guide-table">
+            <thead>
+              <tr>
+                <th>입력 예시</th>
+                <th>자동 변환 규칙</th>
+                <th>설명</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="syntax-badge" data-sample="2pi">2pi</span></td>
+                <td><code>2 * π</code></td>
+                <td>상수 앞 곱셈 기호 생략 지원</td>
+              </tr>
+              <tr>
+                <td><span class="syntax-badge" data-sample="3e">3e</span></td>
+                <td><code>3 * e</code></td>
+                <td>자연상수 <code>e</code> 계수 곱셈</td>
+              </tr>
+              <tr>
+                <td><span class="syntax-badge" data-sample="(2+3)(4+5)">(2+3)(4+5)</span></td>
+                <td><code>(2+3) * (4+5)</code></td>
+                <td>괄호 간 곱셈 생략 및 미완성 괄호 자동 닫기</td>
+              </tr>
+              <tr>
+                <td><span class="syntax-badge" data-sample="2sin(pi/6)">2sin(pi/6)</span></td>
+                <td><code>2 * sin(π/6)</code></td>
+                <td>숫자와 함수 사이 곱셈 자동 처리</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div>
+          <div class="guide-sec-title">2. 거듭제곱 · 팩토리얼 · 제곱근</div>
+          <table class="guide-table">
+            <thead>
+              <tr>
+                <th>수식 문법</th>
+                <th>예시 (클릭 시 입력)</th>
+                <th>설명</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>x^y</code></td>
+                <td><span class="syntax-badge" data-sample="2^10">2^10</span></td>
+                <td>거듭제곱 ($2^{10} = 1\text{ }024$)</td>
+              </tr>
+              <tr>
+                <td><code>n!</code></td>
+                <td><span class="syntax-badge" data-sample="5!">5!</span></td>
+                <td>팩토리얼 ($5! = 120$, 최대 $170!$)</td>
+              </tr>
+              <tr>
+                <td><code>sqrt(x)</code>, <code>cbrt(x)</code></td>
+                <td><span class="syntax-badge" data-sample="sqrt(144)">sqrt(144)</span></td>
+                <td>제곱근($\sqrt{x}$) 및 세제곱근($\sqrt[3]{x}$)</td>
+              </tr>
+              <tr>
+                <td><code>abs(x)</code></td>
+                <td><span class="syntax-badge" data-sample="abs(-42)">abs(-42)</span></td>
+                <td>절댓값 ($|-42| = 42$)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div>
+          <div class="guide-sec-title">3. 삼각 · 역삼각 · 쌍곡선 · 로그 함수</div>
+          <table class="guide-table">
+            <thead>
+              <tr>
+                <th>분류</th>
+                <th>지원 함수명</th>
+                <th>테스트 예시</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>삼각함수</td>
+                <td><code>sin</code>, <code>cos</code>, <code>tan</code></td>
+                <td><span class="syntax-badge" data-sample="sin(pi/2)">sin(pi/2)</span></td>
+              </tr>
+              <tr>
+                <td>역삼각함수</td>
+                <td><code>asin</code>, <code>acos</code>, <code>atan</code></td>
+                <td><span class="syntax-badge" data-sample="atan(1)*4">atan(1)*4</span></td>
+              </tr>
+              <tr>
+                <td>쌍곡선함수</td>
+                <td><code>sinh</code>, <code>cosh</code>, <code>tanh</code></td>
+                <td><span class="syntax-badge" data-sample="cosh(0)">cosh(0)</span></td>
+              </tr>
+              <tr>
+                <td>로그함수</td>
+                <td><code>ln</code> (자연로그), <code>log</code> (상용로그), <code>log2</code></td>
+                <td><span class="syntax-badge" data-sample="ln(e^3) + log(100)">ln(e^3) + log(100)</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Feedback -->
+  <div class="toast" id="toast">복사되었습니다.</div>
+
+  <script>
+    /**
+     * Mini Calculator - Single-File Mobile-First Web App
+     * Features:
+     * - Safe Shunting-Yard / Recursive Descent Math Parser (No eval)
+     * - Desmos-style Implicit Math Parser: 2pi, (2+3)(4+5), 2sin(x), sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, ln, log, log2, sqrt, cbrt, abs, n!, x^y
+     * - Visual Thin-Space (\u2009) thousands separator for display vs. pure raw number clipboard copy
+     * - Auto-closing parentheses preview & RAD / DEG angle toggle
+     */
+
+    const STORAGE_KEY = 'mini_calculator_state_v1';
+    const THIN_SPACE = '\u2009';
+
+    const exprInput = document.getElementById('exprInput');
+    const ghostParens = document.getElementById('ghostParens');
+    const formattedResult = document.getElementById('formattedResult');
+    const rawPreview = document.getElementById('rawPreview');
+    const copyRawBtn = document.getElementById('copyRawBtn');
+    const historyTape = document.getElementById('historyTape');
+    const angleModeBtn = document.getElementById('angleModeBtn');
+    const helpModal = document.getElementById('helpModal');
+
+    let state = {
+      theme: 'light',
+      angleMode: 'RAD', // 'RAD' or 'DEG'
+      lastAns: 0,
+      currentRawValue: '0',
+      history: []
+    };
+
+    const SUPPORTED_FUNCS = new Set([
+      'sin', 'cos', 'tan',
+      'asin', 'acos', 'atan',
+      'sinh', 'cosh', 'tanh',
+      'ln', 'log', 'log10', 'log2',
+      'sqrt', 'cbrt', 'abs', 'exp', 'floor', 'ceil', 'round'
+    ]);
+
+    // --- Number Formatting (Thin Space Thousands vs Raw Value) ---
+    function formatWithThinSpace(rawStr) {
+      if (!rawStr || rawStr === 'NaN' || rawStr === 'Infinity' || rawStr === '-Infinity') {
+        return '정의되지 않음';
+      }
+      // Handle scientific notation e.g. 1.2345e+24
+      if (rawStr.includes('e')) {
+        const [mantissa, exp] = rawStr.split('e');
+        return `${formatWithThinSpace(mantissa)} × 10^${exp.replace('+', '')}`;
+      }
+
+      const isNeg = rawStr.startsWith('-');
+      const clean = isNeg ? rawStr.slice(1) : rawStr;
+      const [intPart, decPart] = clean.split('.');
+
+      const spacedInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, THIN_SPACE);
+      const sign = isNeg ? '-' : '';
+      return decPart !== undefined ? `${sign}${spacedInt}.${decPart}` : `${sign}${spacedInt}`;
+    }
+
+    function normalizeNumberPrecision(num) {
+      if (!Number.isFinite(num)) return null;
+      if (Math.abs(num) < 1e-14) num = 0; // Eliminate floating point noise like sin(pi) = 1.22e-16
+      if (Math.abs(num) >= 1e15 || (Math.abs(num) > 0 && Math.abs(num) < 1e-6)) {
+        return Number(num.toPrecision(12)).toString();
+      }
+      // Strip trailing float noise (0.1 + 0.2 -> 0.3)
+      return Number(num.toPrecision(12)).toString();
+    }
+
+    // --- Factorial Helper ---
+    function computeFactorial(n) {
+      if (n < 0 || !Number.isInteger(n)) throw new Error('팩토리얼은 0 이상의 정수만 지원합니다');
+      if (n > 170) throw new Error('숫자가 너무 큽니다 (최대 170!)');
+      let res = 1;
+      for (let i = 2; i <= n; i++) res *= i;
+      return res;
+    }
+
+    // --- Tokenizer & Implicit Multiplication Injector ---
+    function tokenize(exprStr) {
+      // Normalize display symbols & remove thin spaces
+      const s = exprStr
+        .replace(/[\u2009\s,]/g, '')
+        .replace(/×/g, '*')
+        .replace(/÷/g, '/')
+        .replace(/−/g, '-')
+        .replace(/π/g, 'pi');
+
+      const rawTokens = [];
+      let i = 0;
+
+      while (i < s.length) {
+        const ch = s[i];
+
+        // Number literal (supports scientific notation only when followed by +/- or digits if not constant 'e')
+        if (/[0-9.]/.test(ch)) {
+          let numStr = '';
+          let dotCount = 0;
+          while (i < s.length && /[0-9.]/.test(s[i])) {
+            if (s[i] === '.') dotCount++;
+            if (dotCount > 1) throw new Error('소수점 형식 오류');
+            numStr += s[i++];
+          }
+          if (numStr === '.') throw new Error('숫자 형식 오류');
+          rawTokens.push({ type: 'NUMBER', value: parseFloat(numStr) });
+          continue;
+        }
+
+        // Identifier (functions or constants: pi, e, ans, sin, cos...)
+        if (/[a-zA-Z]/.test(ch)) {
+          let id = '';
+          while (i < s.length && /[a-zA-Z0-9]/.test(s[i])) {
+            id += s[i++];
+          }
+          const lower = id.toLowerCase();
+
+          // Split leading or trailing known constants if user typed e.g. "2pi" (already handled) or "pie"
+          if (lower === 'pi') {
+            rawTokens.push({ type: 'CONST', value: Math.PI });
+          } else if (lower === 'e') {
+            rawTokens.push({ type: 'CONST', value: Math.E });
+          } else if (lower === 'ans') {
+            rawTokens.push({ type: 'CONST', value: state.lastAns });
+          } else if (SUPPORTED_FUNCS.has(lower)) {
+            rawTokens.push({ type: 'FUNC', value: lower });
+          } else {
+            throw new Error(`알 수 없는 기호: '${id}'`);
+          }
+          continue;
+        }
+
+        // Operators and Parentheses
+        if ('+-*/^%!()'.includes(ch)) {
+          if (ch === '(') rawTokens.push({ type: 'LPAREN', value: '(' });
+          else if (ch === ')') rawTokens.push({ type: 'RPAREN', value: ')' });
+          else if (ch === '!' || ch === '%') rawTokens.push({ type: 'POSTFIX', value: ch });
+          else rawTokens.push({ type: 'OP', value: ch });
+          i++;
+          continue;
+        }
+
+        throw new Error(`지원하지 않는 문자: '${ch}'`);
+      }
+
+      // Auto-close unclosed parentheses
+      let openCount = 0;
+      for (const t of rawTokens) {
+        if (t.type === 'LPAREN') openCount++;
+        else if (t.type === 'RPAREN') openCount = Math.max(0, openCount - 1);
+      }
+      for (let k = 0; k < openCount; k++) {
+        rawTokens.push({ type: 'RPAREN', value: ')' });
+      }
+
+      // Insert Implicit Multiplication (*) where needed:
+      // Left is [NUMBER, CONST, RPAREN, POSTFIX] and Right is [NUMBER, CONST, FUNC, LPAREN]
+      const tokens = [];
+      for (let j = 0; j < rawTokens.length; j++) {
+        const curr = rawTokens[j];
+        if (j > 0) {
+          const prev = rawTokens[j - 1];
+          const leftCanMul = ['NUMBER', 'CONST', 'RPAREN', 'POSTFIX'].includes(prev.type);
+          const rightCanMul = ['NUMBER', 'CONST', 'FUNC', 'LPAREN'].includes(curr.type);
+          if (leftCanMul && rightCanMul) {
+            tokens.push({ type: 'OP', value: '*' });
+          }
+        }
+        tokens.push(curr);
+      }
+
+      return { tokens, autoClosedParens: openCount };
+    }
+
+    // --- Recursive Descent Math Evaluator ---
+    function evaluateMathExpression(exprStr) {
+      if (!exprStr.trim()) {
+        return { raw: '0', formatted: '0', autoClosed: 0, error: null };
+      }
+
+      const { tokens, autoClosedParens } = tokenize(exprStr);
+      if (tokens.length === 0) {
+        return { raw: '0', formatted: '0', autoClosed: 0, error: null };
+      }
+
+      let pos = 0;
+
+      function peek() {
+        return tokens[pos] || null;
+      }
+
+      function consume() {
+        return tokens[pos++];
+      }
+
+      // Grammar:
+      // Expr   -> Term (( '+' | '-' ) Term)*
+      // Term   -> Power (( '*' | '/' ) Power)*
+      // Power  -> Unary ( '^' Power )?   (Right-associative, unary minus binds looser than ^ so -2^2 = -4)
+      // Unary  -> ( '+' | '-' ) Unary | Postfix
+      // Postfix-> Primary ( '!' | '%' )*
+      // Primary-> NUMBER | CONST | FUNC '(' Expr ')' | FUNC Primary | '(' Expr ')'
+
+      function parseExpr() {
+        let left = parseTerm();
+        while (peek() && peek().type === 'OP' && (peek().value === '+' || peek().value === '-')) {
+          const op = consume().value;
+          const right = parseTerm();
+          left = op === '+' ? left + right : left - right;
+        }
+        return left;
+      }
+
+      function parseTerm() {
+        let left = parseUnary();
+        while (peek() && peek().type === 'OP' && (peek().value === '*' || peek().value === '/')) {
+          const op = consume().value;
+          const right = parseUnary();
+          if (op === '/') {
+            if (right === 0) throw new Error('0으로 나눌 수 없습니다');
+            left = left / right;
+          } else {
+            left = left * right;
+          }
+        }
+        return left;
+      }
+
+      function parseUnary() {
+        if (peek() && peek().type === 'OP' && (peek().value === '+' || peek().value === '-')) {
+          const op = consume().value;
+          const val = parseUnary();
+          return op === '-' ? -val : val;
+        }
+        return parsePower();
+      }
+
+      function parsePower() {
+        let base = parsePostfix();
+        if (peek() && peek().type === 'OP' && peek().value === '^') {
+          consume();
+          const exponent = parseUnary(); // Right-associative & allows 2^-3
+          return Math.pow(base, exponent);
+        }
+        return base;
+      }
+
+      function parsePostfix() {
+        let val = parsePrimary();
+        while (peek() && peek().type === 'POSTFIX') {
+          const post = consume().value;
+          if (post === '!') {
+            val = computeFactorial(val);
+          } else if (post === '%') {
+            val = val / 100;
+          }
+        }
+        return val;
+      }
+
+      function parsePrimary() {
+        const t = peek();
+        if (!t) throw new Error('수식이 완성되지 않았습니다');
+
+        if (t.type === 'NUMBER' || t.type === 'CONST') {
+          consume();
+          return t.value;
+        }
+
+        if (t.type === 'FUNC') {
+          const fnName = consume().value;
+          let arg;
+          if (peek() && peek().type === 'LPAREN') {
+            consume(); // '('
+            arg = parseExpr();
+            if (!peek() || peek().type !== 'RPAREN') {
+              throw new Error('닫는 괄호가 부족합니다');
+            }
+            consume(); // ')'
+          } else {
+            arg = parsePrimary();
+          }
+          return applyMathFunction(fnName, arg);
+        }
+
+        if (t.type === 'LPAREN') {
+          consume(); // '('
+          if (peek() && peek().type === 'RPAREN') {
+            consume();
+            return 0;
+          }
+          const val = parseExpr();
+          if (!peek() || peek().type !== 'RPAREN') {
+            throw new Error('괄호 짝이 맞지 않습니다');
+          }
+          consume(); // ')'
+          return val;
+        }
+
+        throw new Error(`잘못된 수식 기호: '${t.value}'`);
+      }
+
+      const numericResult = parseExpr();
+      if (pos < tokens.length) {
+        throw new Error('수식 구문 오류');
+      }
+
+      const rawStr = normalizeNumberPrecision(numericResult);
+      if (rawStr === null) {
+        throw new Error('결과가 정의되지 않거나 무한대입니다');
+      }
+
+      return {
+        num: Number(rawStr),
+        raw: rawStr,
+        formatted: formatWithThinSpace(rawStr),
+        autoClosed: autoClosedParens,
+        error: null
+      };
+    }
+
+    function applyMathFunction(fn, x) {
+      const isDeg = state.angleMode === 'DEG';
+      const toRad = (deg) => (deg * Math.PI) / 180;
+      const toDeg = (rad) => (rad * 180) / Math.PI;
+
+      switch (fn) {
+        case 'sin': return Math.sin(isDeg ? toRad(x) : x);
+        case 'cos': return Math.cos(isDeg ? toRad(x) : x);
+        case 'tan': return Math.tan(isDeg ? toRad(x) : x);
+        case 'asin': {
+          const r = Math.asin(x);
+          return isDeg ? toDeg(r) : r;
+        }
+        case 'acos': {
+          const r = Math.acos(x);
+          return isDeg ? toDeg(r) : r;
+        }
+        case 'atan': {
+          const r = Math.atan(x);
+          return isDeg ? toDeg(r) : r;
+        }
+        case 'sinh': return Math.sinh(x);
+        case 'cosh': return Math.cosh(x);
+        case 'tanh': return Math.tanh(x);
+        case 'ln': {
+          if (x <= 0) throw new Error('로그의 진수는 양수여야 합니다');
+          return Math.log(x);
+        }
+        case 'log':
+        case 'log10': {
+          if (x <= 0) throw new Error('로그의 진수는 양수여야 합니다');
+          return Math.log10(x);
+        }
+        case 'log2': {
+          if (x <= 0) throw new Error('로그의 진수는 양수여야 합니다');
+          return Math.log2(x);
+        }
+        case 'sqrt': {
+          if (x < 0) throw new Error('음수의 제곱근은 실수 범위가 아닙니다');
+          return Math.sqrt(x);
+        }
+        case 'cbrt': return Math.cbrt(x);
+        case 'abs': return Math.abs(x);
+        case 'exp': return Math.exp(x);
+        case 'floor': return Math.floor(x);
+        case 'ceil': return Math.ceil(x);
+        case 'round': return Math.round(x);
+        default:
+          throw new Error(`지원하지 않는 함수: ${fn}`);
+      }
+    }
+
+    // --- Live Calculation & UI Update ---
+    function updateLiveCalculation() {
+      const expr = exprInput.value;
+      if (!expr.trim()) {
+        formattedResult.textContent = '0';
+        formattedResult.classList.remove('is-error');
+        rawPreview.textContent = '결과 값: 0';
+        ghostParens.textContent = '';
+        state.currentRawValue = '0';
+        copyRawBtn.disabled = false;
+        return;
+      }
+
+      try {
+        const res = evaluateMathExpression(expr);
+        formattedResult.textContent = res.formatted;
+        formattedResult.classList.remove('is-error');
+        rawPreview.textContent = `결과 값: ${res.raw}`;
+        ghostParens.textContent = res.autoClosed > 0 ? `자동 닫힘: ${')'.repeat(res.autoClosed)}` : '';
+        state.currentRawValue = res.raw;
+        copyRawBtn.disabled = false;
+      } catch (err) {
+        // During typing (e.g. "2 + "), keep previous valid look or show subtle status
+        formattedResult.textContent = err.message || '수식 확인 필요';
+        formattedResult.classList.add('is-error');
+        ghostParens.textContent = '';
+      }
+    }
+
+    function commitEvaluation() {
+      const expr = exprInput.value.trim();
+      if (!expr) return;
+
+      try {
+        const res = evaluateMathExpression(expr);
+        const closedExpr = expr + ')'.repeat(res.autoClosed);
+
+        state.lastAns = res.num;
+        state.currentRawValue = res.raw;
+
+        // Record to history tape (keep latest 10)
+        state.history.unshift({
+          expr: closedExpr,
+          raw: res.raw,
+          formatted: res.formatted
+        });
+        if (state.history.length > 10) state.history.pop();
+
+        exprInput.value = res.raw;
+        ghostParens.textContent = '';
+        formattedResult.textContent = res.formatted;
+        formattedResult.classList.remove('is-error');
+        rawPreview.textContent = `결과 값: ${res.raw}`;
+
+        renderHistory();
+        saveState();
+      } catch (err) {
+        showToast(err.message || '완성된 수식을 입력해 주세요.');
+      }
+    }
+
+    // --- Insert Text at Cursor ---
+    function insertAtCursor(str) {
+      const start = exprInput.selectionStart ?? exprInput.value.length;
+      const end = exprInput.selectionEnd ?? exprInput.value.length;
+      const current = exprInput.value;
+
+      exprInput.value = current.slice(0, start) + str + current.slice(end);
+      const nextPos = start + str.length;
+      exprInput.focus();
+      exprInput.setSelectionRange(nextPos, nextPos);
+      updateLiveCalculation();
+    }
+
+    function handleBackspace() {
+      const start = exprInput.selectionStart ?? exprInput.value.length;
+      const end = exprInput.selectionEnd ?? exprInput.value.length;
+      const current = exprInput.value;
+
+      if (start !== end) {
+        exprInput.value = current.slice(0, start) + current.slice(end);
+        exprInput.setSelectionRange(start, start);
+      } else if (start > 0) {
+        exprInput.value = current.slice(0, start - 1) + current.slice(start);
+        exprInput.setSelectionRange(start - 1, start - 1);
+      }
+      exprInput.focus();
+      updateLiveCalculation();
+    }
+
+    function clearAll() {
+      exprInput.value = '';
+      updateLiveCalculation();
+      exprInput.focus();
+    }
+
+    // --- Copy Raw Number to Clipboard ---
+    function copyRawNumber() {
+      const raw = state.currentRawValue ?? '0';
+      // Fallback compatible clipboard copy for iframe environments
+      const temp = document.createElement('textarea');
+      temp.value = raw;
+      temp.style.position = 'fixed';
+      temp.style.opacity = '0';
+      document.body.appendChild(temp);
+      temp.select();
+      document.execCommand('copy');
+      temp.remove();
+
+      showToast(`원본 숫자 복사됨: ${raw}`);
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      clearTimeout(toast._timer);
+      toast._timer = setTimeout(() => toast.classList.remove('show'), 2100);
+    }
+
+    // --- History Rendering ---
+    function renderHistory() {
+      if (state.history.length === 0) {
+        historyTape.innerHTML = `<div class="history-empty">계산 기록이 여기에 표시됩니다 (클릭하여 재사용)</div>`;
+        return;
+      }
+
+      historyTape.innerHTML = '';
+      state.history.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'history-item';
+        row.title = '클릭하면 수식을 불러옵니다';
+        row.innerHTML = `
+        <span class="history-expr">${item.expr} =</span>
+        <span class="history-val">${item.formatted}</span>
+      `;
+        row.addEventListener('click', () => {
+          exprInput.value = item.expr;
+          exprInput.focus();
+          updateLiveCalculation();
+        });
+        historyTape.appendChild(row);
+      });
+    }
+
+    // --- Persistence ---
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          theme: state.theme,
+          angleMode: state.angleMode,
+          lastAns: state.lastAns,
+          history: state.history
+        }));
+      } catch (_) { }
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        state = { ...state, ...parsed };
+      } catch (_) { }
+    }
+
+    // --- Event Listeners ---
+    exprInput.addEventListener('input', updateLiveCalculation);
+
+    exprInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === '=') {
+        e.preventDefault();
+        commitEvaluation();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        clearAll();
+      }
+    });
+
+    // Keypad Delegation
+    document.getElementById('keypad').addEventListener('click', (e) => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+
+      const action = btn.dataset.action;
+      const insert = btn.dataset.insert;
+
+      if (action === 'clear') clearAll();
+      else if (action === 'backspace') handleBackspace();
+      else if (action === 'evaluate') commitEvaluation();
+      else if (insert !== undefined) insertAtCursor(insert);
+    });
+
+    // Quick Chip Strip Delegation
+    document.querySelector('.quick-strip').addEventListener('click', (e) => {
+      const chip = e.target.closest('.chip');
+      if (!chip) return;
+      insertAtCursor(chip.dataset.insert);
+    });
+
+    copyRawBtn.addEventListener('click', copyRawNumber);
+
+    // RAD / DEG Toggle
+    angleModeBtn.addEventListener('click', () => {
+      state.angleMode = state.angleMode === 'RAD' ? 'DEG' : 'RAD';
+      angleModeBtn.textContent = state.angleMode;
+      updateLiveCalculation();
+      saveState();
+      showToast(`삼각함수 단위: ${state.angleMode === 'RAD' ? '라디안 (Radian)' : '도 (Degree)'}`);
+    });
+
+    // Theme Toggle
+    document.getElementById('themeBtn').addEventListener('click', () => {
+      state.theme = state.theme === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', state.theme);
+      saveState();
+    });
+
+    // Help Modal Controls
+    document.getElementById('openHelpBtn').addEventListener('click', () => {
+      helpModal.classList.add('open');
+    });
+
+    document.getElementById('closeHelpBtn').addEventListener('click', () => {
+      helpModal.classList.remove('open');
+    });
+
+    helpModal.addEventListener('click', (e) => {
+      if (e.target === helpModal) {
+        helpModal.classList.remove('open');
+        return;
+      }
+      const sampleBadge = e.target.closest('[data-sample]');
+      if (sampleBadge) {
+        exprInput.value = sampleBadge.dataset.sample;
+        helpModal.classList.remove('open');
+        exprInput.focus();
+        updateLiveCalculation();
+      }
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && helpModal.classList.contains('open')) {
+        helpModal.classList.remove('open');
+        return;
+      }
+      // Global keyboard redirect to input when not focused on modal
+      if (
+        !helpModal.classList.contains('open') &&
+        document.activeElement !== exprInput &&
+        !e.ctrlKey && !e.metaKey && !e.altKey &&
+        e.key.length === 1
+      ) {
+        exprInput.focus();
+      }
+    });
+
+    function init() {
+      loadState();
+      document.documentElement.setAttribute('data-theme', state.theme);
+      angleModeBtn.textContent = state.angleMode;
+      renderHistory();
+      updateLiveCalculation();
+    }
+
+    window.onload = init;
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,1625 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mini Text Converter</title>
+  <style>
+    :root {
+      --bg-app: #f8fafc;
+      --bg-card: #ffffff;
+      --bg-subtle: #f1f5f9;
+      --bg-input: #ffffff;
+      --border: #e2e8f0;
+      --border-focus: #2563eb;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-soft: #eff6ff;
+      --primary-border: #bfdbfe;
+      --accent-encode: #7c3aed;
+      --accent-encode-soft: #f5f3ff;
+      --danger: #ef4444;
+      --success: #10b981;
+      --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+      --shadow-lg: 0 20px 25px -5px rgba(15, 23, 42, 0.15);
+      --mono-font: 'JetBrains Mono', 'D2Coding', 'Consolas', 'Malgun Gothic', monospace;
+      --sans-font: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Malgun Gothic', sans-serif;
+    }
+
+    [data-theme="dark"] {
+      --bg-app: #090d16;
+      --bg-card: #0f172a;
+      --bg-subtle: #1e293b;
+      --bg-input: #090d16;
+      --border: #334155;
+      --border-focus: #3b82f6;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --primary: #3b82f6;
+      --primary-hover: #60a5fa;
+      --primary-soft: #1e3a8a;
+      --primary-border: #2563eb;
+      --accent-encode: #a78bfa;
+      --accent-encode-soft: #2e1065;
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+      --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-app);
+      color: var(--text-main);
+      font-family: var(--sans-font);
+      line-height: 1.5;
+      padding: 20px 16px 48px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1260px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding-bottom: 4px;
+    }
+
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: var(--primary);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 16px;
+      letter-spacing: -0.5px;
+      flex-shrink: 0;
+    }
+
+    .brand-title {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-sub {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* Buttons & Controls */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      height: 34px;
+      padding: 0 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-main);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.14s ease;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    .btn:hover:not(:disabled) {
+      background: var(--bg-subtle);
+      border-color: var(--text-muted);
+    }
+
+    .btn:active:not(:disabled) {
+      transform: translateY(1px);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: var(--primary-hover);
+      border-color: var(--primary-hover);
+      color: #ffffff;
+    }
+
+    .btn-soft {
+      background: var(--primary-soft);
+      color: var(--primary);
+      border-color: var(--primary-border);
+    }
+
+    .btn svg {
+      width: 15px;
+      height: 15px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .toggle-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 34px;
+      padding: 0 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-main);
+      cursor: pointer;
+      user-select: none;
+    }
+    .toggle-pill input {
+      accent-color: var(--primary);
+      width: 14px;
+      height: 14px;
+      cursor: pointer;
+    }
+
+    /* Dual Editor Grid */
+    .editor-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 860px) {
+      .editor-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .pane-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .pane-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: var(--bg-subtle);
+      border-bottom: 1px solid var(--border);
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .pane-title-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pane-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+    }
+
+    .active-op-badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      border: 1px solid var(--primary-border);
+    }
+
+    .pane-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+
+    .btn-xs {
+      height: 27px;
+      padding: 0 9px;
+      font-size: 0.76rem;
+      border-radius: 6px;
+    }
+
+    .pane-textarea {
+      width: 100%;
+      height: 240px;
+      padding: 14px;
+      border: none;
+      outline: none;
+      resize: vertical;
+      background: var(--bg-input);
+      color: var(--text-main);
+      font-family: var(--mono-font);
+      font-size: 0.92rem;
+      line-height: 1.6;
+    }
+
+    .pane-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 14px;
+      border-top: 1px solid var(--border);
+      background: var(--bg-card);
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      font-variant-numeric: tabular-nums;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .metrics-list {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .metrics-list b {
+      color: var(--text-main);
+      font-weight: 700;
+    }
+
+    /* Conversion Control Deck */
+    .deck-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .deck-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+    }
+
+    .cat-tabs {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .cat-tab {
+      height: 32px;
+      padding: 0 12px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      background: var(--bg-subtle);
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.14s;
+    }
+
+    .cat-tab:hover {
+      color: var(--text-main);
+    }
+
+    .cat-tab.active {
+      background: var(--primary);
+      color: #ffffff;
+    }
+
+    .deck-options {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* Decode Mode Switch for Encode Category */
+    .encode-mode-switch {
+      display: inline-flex;
+      background: var(--bg-subtle);
+      padding: 3px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .encode-mode-btn {
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 0.76rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .encode-mode-btn.active {
+      background: var(--accent-encode);
+      color: #ffffff;
+    }
+
+    /* Conversion Buttons Grid */
+    .conv-section {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .conv-section-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .conv-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+      gap: 8px;
+    }
+
+    .conv-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 9px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-main);
+      cursor: pointer;
+      transition: all 0.12s ease;
+      text-align: left;
+      min-height: 52px;
+    }
+
+    .conv-btn:hover {
+      border-color: var(--primary);
+      background: var(--bg-subtle);
+      transform: translateY(-1px);
+    }
+
+    .conv-btn.active {
+      background: var(--primary-soft);
+      border-color: var(--primary);
+      box-shadow: 0 0 0 1px var(--primary);
+    }
+
+    .conv-btn-name {
+      font-size: 0.84rem;
+      font-weight: 700;
+      line-height: 1.25;
+      margin-bottom: 2px;
+      word-break: break-all;
+    }
+
+    .conv-btn-preview {
+      font-size: 0.71rem;
+      color: var(--text-muted);
+      font-family: var(--mono-font);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      width: 100%;
+    }
+
+    /* Available Conversions Help Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      backdrop-filter: blur(3px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 20px;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-window {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 880px;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-subtle);
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .modal-title {
+      font-size: 1.05rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .modal-search {
+      height: 34px;
+      width: 260px;
+      padding: 0 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-main);
+      font-size: 0.83rem;
+      outline: none;
+    }
+    .modal-search:focus {
+      border-color: var(--primary);
+    }
+
+    .modal-body {
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .help-category-title {
+      font-size: 0.9rem;
+      font-weight: 800;
+      color: var(--primary);
+      margin-bottom: 8px;
+      padding-bottom: 4px;
+      border-bottom: 2px solid var(--primary-border);
+      display: inline-block;
+    }
+
+    .help-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+
+    .help-table th,
+    .help-table td {
+      padding: 9px 10px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .help-table th {
+      color: var(--text-muted);
+      font-weight: 700;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      background: var(--bg-subtle);
+    }
+
+    .help-code {
+      font-family: var(--mono-font);
+      background: var(--bg-subtle);
+      padding: 2px 6px;
+      border-radius: 5px;
+      font-size: 0.78rem;
+      white-space: nowrap;
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #1e293b;
+      color: #f8fafc;
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      opacity: 0;
+      transform: translateY(12px);
+      pointer-events: none;
+      transition: all 0.2s ease;
+      z-index: 200;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Top Header -->
+  <header class="header">
+    <div class="brand-wrap">
+      <div class="brand-icon">Aa</div>
+      <div>
+        <h1 class="brand-title">Mini Text Converter</h1>
+        <p class="brand-sub">대소문자, 개발 변수명 케이스, 인코딩/디코딩, 유니코드 스타일 올인원 변환기</p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn" id="sampleBtn" title="테스트용 샘플 문장 불러오기">
+        샘플 텍스트
+      </button>
+
+      <button class="btn btn-soft" id="openHelpBtn" title="Available Conversions 전체 설명 및 예시 보기">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Available Conversions (도움말)
+      </button>
+
+      <button class="btn" id="themeToggleBtn" title="라이트 / 다크 모드 전환">
+        <svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        테마
+      </button>
+    </div>
+  </header>
+
+  <!-- Dual View: Left Input & Right Output -->
+  <section class="editor-grid">
+    <!-- Input Pane -->
+    <div class="pane-card">
+      <div class="pane-header">
+        <div class="pane-title-group">
+          <span class="pane-title">원본 입력 (Input)</span>
+        </div>
+        <div class="pane-toolbar">
+          <button class="btn btn-xs" id="pasteBtn" title="클립보드에서 붙여넣기">붙여넣기</button>
+          <button class="btn btn-xs" id="openFileBtn" title="로컬 텍스트 파일 불러오기">파일 열기</button>
+          <button class="btn btn-xs" id="clearInputBtn" title="입력창 비우기">비우기</button>
+          <input type="file" id="fileInput" accept=".txt,.md,.json,.csv,.js,.py,.html,.css,.log" style="display:none">
+        </div>
+      </div>
+
+      <textarea
+        id="inputText"
+        class="pane-textarea"
+        placeholder="여기에 변환할 텍스트를 입력하거나 붙여넣으세요..."
+        spellcheck="false"
+      ></textarea>
+
+      <div class="pane-footer">
+        <div class="metrics-list" id="inputMetrics">
+          <span>글자: <b>0</b></span>
+          <span>단어: <b>0</b></span>
+          <span>줄: <b>0</b></span>
+          <span>문장: <b>0</b></span>
+          <span>바이트: <b>0 B</b></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Result Pane -->
+    <div class="pane-card">
+      <div class="pane-header">
+        <div class="pane-title-group">
+          <span class="pane-title">변환 결과 (Result)</span>
+          <span class="active-op-badge" id="activeOpBadge">camelCase</span>
+        </div>
+        <div class="pane-toolbar">
+          <button class="btn btn-xs btn-soft" id="chainToInputBtn" title="결과를 왼쪽 입력창으로 보내 연속 변환 (Copy to Input)">
+            ← 입력창으로 보내기
+          </button>
+          <button class="btn btn-xs" id="saveResultBtn" title="변환 결과를 텍스트 파일로 저장">저장</button>
+          <button class="btn btn-xs btn-primary" id="copyResultBtn" title="결과 복사하기">
+            복사 (Copy)
+          </button>
+        </div>
+      </div>
+
+      <textarea
+        id="outputText"
+        class="pane-textarea"
+        placeholder="변환 버튼을 클릭하면 결과가 여기에 표시됩니다."
+        spellcheck="false"
+      ></textarea>
+
+      <div class="pane-footer">
+        <div class="metrics-list" id="outputMetrics">
+          <span>글자: <b>0</b></span>
+          <span>단어: <b>0</b></span>
+          <span>줄: <b>0</b></span>
+          <span>바이트: <b>0 B</b></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Conversion Control Deck -->
+  <section class="deck-card">
+    <div class="deck-top">
+      <!-- Category Filter Tabs -->
+      <div class="cat-tabs" id="categoryTabs">
+        <button class="cat-tab active" data-cat="all">전체 보기</button>
+        <button class="cat-tab" data-cat="basic">기본 (Basic)</button>
+        <button class="cat-tab" data-cat="programming">개발 (Programming)</button>
+        <button class="cat-tab" data-cat="clean">정리/라인 (Clean)</button>
+        <button class="cat-tab" data-cat="fun">효과 (Fun)</button>
+        <button class="cat-tab" data-cat="encode">인코딩 (Encode/Decode)</button>
+        <button class="cat-tab" data-cat="unicode">유니코드 (Unicode)</button>
+      </div>
+
+      <!-- Execution Options -->
+      <div class="deck-options">
+        <!-- Encode / Decode Direction Switch -->
+        <div class="encode-mode-switch" title="인코딩(Encode) 또는 복호화(Decode) 방향 선택">
+          <button class="encode-mode-btn active" id="modeEncodeBtn">Encode (변환)</button>
+          <button class="encode-mode-btn" id="modeDecodeBtn">Decode (복원)</button>
+        </div>
+
+        <label class="toggle-pill" title="프로그래밍 케이스 변환 시 줄(Line) 단위로 각각 분리하여 변환합니다.">
+          <input type="checkbox" id="lineByLineCheck" checked>
+          줄 단위 개별 처리
+        </label>
+
+        <label class="toggle-pill" title="입력창에 타이핑할 때마다 선택된 변환을 실시간으로 적용합니다.">
+          <input type="checkbox" id="liveModeCheck" checked>
+          실시간 자동 변환
+        </label>
+      </div>
+    </div>
+
+    <!-- Dynamic Conversion Buttons Container -->
+    <div id="conversionsContainer" style="display: flex; flex-direction: column; gap: 16px;"></div>
+  </section>
+</div>
+
+<!-- Available Conversions Help Modal -->
+<div class="modal-backdrop" id="helpModal">
+  <div class="modal-window">
+    <div class="modal-header">
+      <div class="modal-title">
+        <svg viewBox="0 0 24 24" width="20" height="20" stroke="var(--primary)" stroke-width="2.2" fill="none"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Available Conversions (변환 규칙 및 예시 가이드)
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <input type="text" class="modal-search" id="helpSearchInput" placeholder="변환 이름 또는 설명 검색 (예: snake, base64)...">
+        <button class="btn" id="closeHelpBtn">닫기 (Esc)</button>
+      </div>
+    </div>
+
+    <div class="modal-body" id="helpModalBody"></div>
+  </div>
+</div>
+
+<!-- Toast Feedback -->
+<div class="toast" id="toastBox">클립보드에 복사되었습니다.</div>
+
+<script>
+  /**
+   * Mini Text Converter - Pure Web API Text Case, Encoding & Unicode Transformer
+   * Inspired by asciiart.eu/tools/case-converter with enhanced bidirectional decoding,
+   * smart acronym word boundary detection, Korean-friendly slug, and searchable Help Modal.
+   */
+
+  const STORAGE_KEY = 'mini_text_converter_state_v1';
+  const utf8Encoder = new TextEncoder();
+
+  // --- Smart Word Boundary Tokenizer for Programming Cases ---
+  // Preserves acronyms cleanly: "parseHTMLString" -> ["parse", "HTML", "String"]
+  function splitWords(str, keepKorean = false) {
+    if (!str) return [];
+    const normalized = str.normalize('NFKD').replace(/[\u0300-\u036f]/g, '');
+    const pattern = keepKorean
+      ? /[A-Z]+(?=[A-Z][a-z]|\b)|[A-Z]?[a-z]+|[0-9]+|[가-힣]+/g
+      : /[A-Z]+(?=[A-Z][a-z]|\b)|[A-Z]?[a-z]+|[0-9]+/g;
+    return normalized.match(pattern) || [];
+  }
+
+  function applyProgCase(text, lineByLine, joinerFn) {
+    if (lineByLine) {
+      return text
+        .split(/\r?\n/)
+        .map(line => {
+          if (!line.trim()) return '';
+          const words = splitWords(line, true);
+          return words.length ? joinerFn(words) : line.trim();
+        })
+        .join('\n');
+    }
+    const words = splitWords(text, true);
+    return words.length ? joinerFn(words) : '';
+  }
+
+  // --- Unicode Mathematical & Aesthetic Character Mappers ---
+  function mapByOffset(str, upperStart, lowerStart, digitStart = null, exceptions = {}) {
+    return Array.from(str).map(ch => {
+      if (exceptions[ch]) return exceptions[ch];
+      const code = ch.codePointAt(0);
+      if (code >= 65 && code <= 90 && upperStart) {
+        return String.fromCodePoint(upperStart + (code - 65));
+      }
+      if (code >= 97 && code <= 122 && lowerStart) {
+        return String.fromCodePoint(lowerStart + (code - 97));
+      }
+      if (digitStart && code >= 48 && code <= 57) {
+        return String.fromCodePoint(digitStart + (code - 48));
+      }
+      return ch;
+    }).join('');
+  }
+
+  const UPSIDE_DOWN_MAP = {
+    a:'ɐ', b:'q', c:'ɔ', d:'p', e:'ǝ', f:'ɟ', g:'ƃ', h:'ɥ', i:'ᴉ', j:'ɾ', k:'ʞ', l:'l', m:'ɯ', n:'u', o:'o', p:'d', q:'b', r:'ɹ', s:'s', t:'ʇ', u:'n', v:'ʌ', w:'ʍ', x:'x', y:'ʎ', z:'z',
+    A:'∀', B:'ᗺ', C:'Ɔ', D:'ᗡ', E:'Ǝ', F:'Ⅎ', G:'פ', H:'H', I:'I', J:'ſ', K:'ʞ', L:'˥', M:'W', N:'N', O:'O', P:'Ԁ', Q:'Ό', R:'ᴚ', S:'S', T:'┴', U:'∩', V:'Λ', W:'M', X:'X', Y:'⅄', Z:'Z',
+    '1':'Ɩ', '2':'ᄅ', '3':'Ɛ', '4':'ㄣ', '5':'ϛ', '6':'9', '7':'ㄥ', '8':'8', '9':'6', '0':'0',
+    '.':'˙', ',':'\'', '\'':',', '"':',,', '?':'¿', '!':'¡', '(' :')', ')':'(', '[':']', ']':'['
+  };
+
+  const MIRROR_MAP = {
+    a:'ɒ', b:'d', c:'ɔ', d:'b', e:'ɘ', f:'Ꮈ', g:'ǫ', h:'ʜ', i:'i', j:'ꞁ', k:'ʞ', l:'l', m:'m', n:'n', o:'o', p:'q', q:'p', r:'ɿ', s:'ꙅ', t:'ƚ', u:'u', v:'v', w:'w', x:'x', y:'y', z:'z',
+    A:'A', B:'ᙠ', C:'Ɔ', D:'ᗡ', E:'Ǝ', F:'ꟻ', G:'⅁', H:'H', I:'I', J:'Ⴑ', K:'⋊', L:'˩', M:'M', N:'И', O:'O', P:'ꟼ', Q:'Ọ', R:'Я', S:'Ꙅ', T:'T', U:'U', V:'V', W:'W', X:'X', Y:'Y', Z:'S'
+  };
+
+  const SUPERSCRIPT_MAP = {
+    a:'ᵃ', b:'ᵇ', c:'ᶜ', d:'ᵈ', e:'ᵉ', f:'ᶠ', g:'ᵍ', h:'ʰ', i:'ⁱ', j:'ʲ', k:'ᵏ', l:'ˡ', m:'ᵐ', n:'ⁿ', o:'ᵒ', p:'ᵖ', q:'𐞥', r:'ʳ', s:'ˢ', t:'ᵗ', u:'ᵘ', v:'ᵛ', w:'ʷ', x:'ˣ', y:'ʸ', z:'ᶻ',
+    0:'⁰', 1:'¹', 2:'²', 3:'³', 4:'⁴', 5:'⁵', 6:'⁶', 7:'⁷', 8:'⁸', 9:'⁹', '+':'⁺', '-':'⁻', '=':'⁼', '(':'⁽', ')':'⁾'
+  };
+
+  const SUBSCRIPT_MAP = {
+    a:'ₐ', e:'ₑ', h:'ₕ', i:'ᵢ', j:'ⱼ', k:'ₖ', l:'ₗ', m:'ₘ', n:'ₙ', o:'ₒ', p:'ₚ', r:'ᵣ', s:'ₛ', t:'ₜ', u:'ᵤ', v:'ᵥ', x:'ₓ',
+    0:'₀', 1:'₁', 2:'₂', 3:'₃', 4:'₄', 5:'₅', 6:'₆', 7:'₇', 8:'₈', 9:'₉', '+':'₊', '-':'₋', '=':'₌', '(':'₍', ')':'₎'
+  };
+
+  const MORSE_TABLE = {
+    A:'.-', B:'-...', C:'-.-.', D:'-..', E:'.', F:'..-.', G:'--.', H:'....', I:'..', J:'.---', K:'-.-', L:'.-..', M:'--', N:'-.', O:'---', P:'.--.', Q:'--.-', R:'.-.', S:'...', T:'-', U:'..-', V:'...-', W:'.--', X:'-..-', Y:'-.--', Z:'--..',
+    0:'-----', 1:'.----', 2:'..---', 3:'...--', 4:'....-', 5:'.....', 6:'-....', 7:'--...', 8:'---..', 9:'----.',
+    '.':'.-.-.-', ',':'--..--', '?':'..--..', '!':'-.-.--', '-':'-....-', '/':'-..-.', '@':'.--.-.', '(':'-.--.', ')':'-.--.-', ' ':'/'
+  };
+  const MORSE_REVERSE = Object.fromEntries(Object.entries(MORSE_TABLE).map(([k, v]) => [v, k]));
+
+  const NATO_TABLE = {
+    A:'Alfa', B:'Bravo', C:'Charlie', D:'Delta', E:'Echo', F:'Foxtrot', G:'Golf', H:'Hotel', I:'India', J:'Juliett', K:'Kilo', L:'Lima', M:'Mike', N:'November', O:'Oscar', P:'Papa', Q:'Quebec', R:'Romeo', S:'Sierra', T:'Tango', U:'Uniform', V:'Victor', W:'Whiskey', X:'X-ray', Y:'Yankee', Z:'Zulu',
+    0:'Zero', 1:'One', 2:'Two', 3:'Three', 4:'Four', 5:'Five', 6:'Six', 7:'Seven', 8:'Eight', 9:'Nine'
+  };
+  const NATO_REVERSE = Object.fromEntries(Object.entries(NATO_TABLE).map(([k, v]) => [v.toLowerCase(), k]));
+
+  const LEET_TABLE = { A:'4', B:'8', E:'3', G:'6', I:'1', L:'1', O:'0', S:'5', T:'7', Z:'2' };
+  const LEET_REVERSE = { '4':'a', '8':'b', '3':'e', '6':'g', '1':'l', '0':'o', '5':'s', '7':'t', '2':'z' };
+
+  // --- Comprehensive Catalog of Conversions ---
+  const CONVERSIONS = [
+    // 1. BASIC
+    {
+      id: 'lowercase', category: 'basic', name: 'lowercase', preview: 'hello world',
+      desc: '모든 영문자를 소문자로 변환합니다.', example: '"Hello World" → "hello world"',
+      fn: (t) => t.toLowerCase()
+    },
+    {
+      id: 'uppercase', category: 'basic', name: 'UPPERCASE', preview: 'HELLO WORLD',
+      desc: '모든 영문자를 대문자로 변환합니다.', example: '"Hello World" → "HELLO WORLD"',
+      fn: (t) => t.toUpperCase()
+    },
+    {
+      id: 'titlecase', category: 'basic', name: 'Title Case', preview: 'Hello World',
+      desc: '각 단어의 첫 글자를 대문자로, 나머지를 소문자로 변환합니다.', example: '"hello world" → "Hello World"',
+      fn: (t) => t.toLowerCase().replace(/(?:^|\s|[-_(/["'])+\S/g, m => m.toUpperCase())
+    },
+    {
+      id: 'sentencecase', category: 'basic', name: 'Sentence case', preview: 'Hello world. How are...',
+      desc: '각 문장의 첫 글자만 대문자로 변환합니다.', example: '"hello world. how are you?" → "Hello world. How are you?"',
+      fn: (t) => t.toLowerCase().replace(/(^\s*[a-z]|[.!?]\s+[a-z])/g, m => m.toUpperCase())
+    },
+    {
+      id: 'capitalizefirst', category: 'basic', name: 'Capitalize first', preview: 'Hello world',
+      desc: '전체 텍스트의 가장 첫 글자만 대문자로 변환합니다.', example: '"hello world" → "Hello world"',
+      fn: (t) => t ? t.charAt(0).toUpperCase() + t.slice(1).toLowerCase() : ''
+    },
+    {
+      id: 'invertcase', category: 'basic', name: 'iNVERT cASE', preview: 'hELLO wORLD',
+      desc: '대문자는 소문자로, 소문자는 대문자로 서로 뒤바꿉니다.', example: '"Hello World" → "hELLO wORLD"',
+      fn: (t) => Array.from(t).map(c => c === c.toUpperCase() ? c.toLowerCase() : c.toUpperCase()).join('')
+    },
+
+    // 2. PROGRAMMING
+    {
+      id: 'camelcase', category: 'programming', name: 'camelCase', preview: 'helloWorld',
+      desc: '첫 단어는 소문자, 이후 단어의 첫 글자는 대문자로 공백 없이 연결합니다 (JS/Java 변수명 표준).', example: '"hello world" → "helloWorld"',
+      fn: (t, opts) => applyProgCase(t, opts.lineByLine, words =>
+        words.map((w, i) => i === 0 ? w.toLowerCase() : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join('')
+      )
+    },
+    {
+      id: 'pascalcase', category: 'programming', name: 'PascalCase', preview: 'HelloWorld',
+      desc: '모든 단어의 첫 글자를 대문자로 시작하며 공백 없이 연결합니다 (클래스/컴포넌트 명명 표준).', example: '"hello world" → "HelloWorld"',
+      fn: (t, opts) => applyProgCase(t, opts.lineByLine, words =>
+        words.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join('')
+      )
+    },
+    {
+      id: 'snakecase', category: 'programming', name: 'snake_case', preview: 'hello_world',
+      desc: '모든 단어를 소문자로 변환하고 밑줄(_)로 연결합니다 (Python/Ruby/DB 컬럼 표준).', example: '"hello world" → "hello_world"',
+      fn: (t, opts) => applyProgCase(t, opts.lineByLine, words => words.map(w => w.toLowerCase()).join('_'))
+    },
+    {
+      id: 'kebabcase', category: 'programming', name: 'kebab-case', preview: 'hello-world',
+      desc: '모든 단어를 소문자로 변환하고 하이픈(-)으로 연결합니다 (CSS 클래스, HTML 속성 표준).', example: '"hello world" → "hello-world"',
+      fn: (t, opts) => applyProgCase(t, opts.lineByLine, words => words.map(w => w.toLowerCase()).join('-'))
+    },
+    {
+      id: 'constantcase', category: 'programming', name: 'CONSTANT_CASE', preview: 'HELLO_WORLD',
+      desc: '모든 단어를 대문자로 변환하고 밑줄(_)로 연결합니다 (환경변수 및 상수 표준).', example: '"hello world" → "HELLO_WORLD"',
+      fn: (t, opts) => applyProgCase(t, opts.lineByLine, words => words.map(w => w.toUpperCase()).join('_'))
+    },
+    {
+      id: 'dotcase', category: 'programming', name: 'dot.case', preview: 'hello.world',
+      desc: '모든 단어를 소문자로 변환하고 마침표(.)로 연결합니다 (패키지명, 설정 키 표준).', example: '"hello world" → "hello.world"',
+      fn: (t, opts) => applyProgCase(t, opts.lineByLine, words => words.map(w => w.toLowerCase()).join('.'))
+    },
+    {
+      id: 'pathcase', category: 'programming', name: 'path/case', preview: 'hello/world',
+      desc: '단어 사이를 슬래시(/)로 연결하여 파일 경로 형태로 만듭니다.', example: '"hello world" → "hello/world"',
+      fn: (t, opts) => applyProgCase(t, opts.lineByLine, words => words.map(w => w.toLowerCase()).join('/'))
+    },
+    {
+      id: 'headercase', category: 'programming', name: 'Header-Case', preview: 'Hello-World',
+      desc: '각 단어의 첫 글자를 대문자로 하고 하이픈(-)으로 연결합니다 (HTTP 헤더 표준).', example: '"content type" → "Content-Type"',
+      fn: (t, opts) => applyProgCase(t, opts.lineByLine, words =>
+        words.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join('-')
+      )
+    },
+    {
+      id: 'flatcase', category: 'programming', name: 'flatcase', preview: 'helloworld',
+      desc: '구분자나 공백 없이 모든 단어를 소문자로 붙여 씁니다.', example: '"hello world" → "helloworld"',
+      fn: (t, opts) => applyProgCase(t, opts.lineByLine, words => words.map(w => w.toLowerCase()).join(''))
+    },
+    {
+      id: 'cobolcase', category: 'programming', name: 'COBOL-CASE', preview: 'HELLO-WORLD',
+      desc: '모든 단어를 대문자로 변환하고 하이픈(-)으로 연결합니다.', example: '"hello world" → "HELLO-WORLD"',
+      fn: (t, opts) => applyProgCase(t, opts.lineByLine, words => words.map(w => w.toUpperCase()).join('-'))
+    },
+    {
+      id: 'adacase', category: 'programming', name: 'Ada_Case', preview: 'Hello_World',
+      desc: '각 단어를 대문자로 시작하고 밑줄(_)로 연결합니다.', example: '"hello world" → "Hello_World"',
+      fn: (t, opts) => applyProgCase(t, opts.lineByLine, words =>
+        words.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join('_')
+      )
+    },
+    {
+      id: 'slugurl', category: 'programming', name: 'slug-url (한글지원)', preview: 'hello-world-안녕',
+      desc: '특수문자와 악센트를 제거하고 영문/숫자/한글을 하이픈(-)으로 연결한 URL 친화적 슬러그를 생성합니다.', example: '"Héllo Wörld! 반갑습니다" → "hello-world-반갑습니다"',
+      fn: (t, opts) => applyProgCase(t, opts.lineByLine, words => words.map(w => w.toLowerCase()).join('-'))
+    },
+
+    // 3. CLEAN / LINE UTILITIES (Added Utility Value)
+    {
+      id: 'trimspaces', category: 'clean', name: '공백 정리 (Normalize)', preview: '다중 공백 → 단일 공백',
+      desc: '연속된 여러 개의 띄어쓰기를 하나로 줄이고 각 줄 앞뒤 여백을 깔끔하게 정리합니다.', example: '"hello    world  " → "hello world"',
+      fn: (t) => t.split(/\r?\n/).map(line => line.trim().replace(/\s+/g, ' ')).join('\n')
+    },
+    {
+      id: 'removespaces', category: 'clean', name: 'Remove spaces', preview: '모든공백제거',
+      desc: '줄바꿈과 띄어쓰기를 포함한 모든 공백 문자를 제거합니다.', example: '"Hello World" → "HelloWorld"',
+      fn: (t) => t.replace(/\s+/g, '')
+    },
+    {
+      id: 'deduplines', category: 'clean', name: '중복 줄 제거 (Unique)', preview: '중복된 행 삭제',
+      desc: '여러 줄의 목록에서 중복된 줄을 제거하고 고유한 줄만 남깁니다.', example: '"A\\nB\\nA" → "A\\nB"',
+      fn: (t) => Array.from(new Set(t.split(/\r?\n/))).join('\n')
+    },
+    {
+      id: 'sortlines', category: 'clean', name: '줄 오름차순 정렬 (A→Z)', preview: '가나다 / 알파벳 정렬',
+      desc: '줄 단위로 텍스트를 오름차순(사전순) 정렬합니다.', example: '"C\\nA\\nB" → "A\\nB\\nC"',
+      fn: (t) => t.split(/\r?\n/).sort((a, b) => a.localeCompare(b, 'ko')).join('\n')
+    },
+
+    // 4. FUN
+    {
+      id: 'alternating', category: 'fun', name: 'aLtErNaTiNg', preview: 'hElLo wOrLd',
+      desc: '소문자로 시작하여 글자마다 소문자와 대문자를 번갈아 배치합니다.', example: '"hello" → "hElLo"',
+      fn: (t) => {
+        let idx = 0;
+        return Array.from(t).map(ch => {
+          if (/[a-zA-Z]/.test(ch)) {
+            return (idx++ % 2 === 0) ? ch.toLowerCase() : ch.toUpperCase();
+          }
+          return ch;
+        }).join('');
+      }
+    },
+    {
+      id: 'spongebob', category: 'fun', name: 'SpOnGeBoB', preview: 'HeLlO WoRlD',
+      desc: '대문자로 시작하여 대소문자를 교차시키는 스폰지밥 밈 스타일입니다.', example: '"hello" → "HeLlO"',
+      fn: (t) => {
+        let idx = 0;
+        return Array.from(t).map(ch => {
+          if (/[a-zA-Z]/.test(ch)) {
+            return (idx++ % 2 === 0) ? ch.toUpperCase() : ch.toLowerCase();
+          }
+          return ch;
+        }).join('');
+      }
+    },
+    {
+      id: 'randomcase', category: 'fun', name: 'RaNdOm CaSe', preview: 'hELlo WoRld',
+      desc: '각 알파벳의 대소문자를 무작위로 결정합니다.', example: '"hello world" → "hELlo WoRld"',
+      fn: (t) => Array.from(t).map(ch => Math.random() > 0.5 ? ch.toUpperCase() : ch.toLowerCase()).join('')
+    },
+    {
+      id: 'reverse', category: 'fun', name: 'Reverse', preview: 'dlroW olleH',
+      desc: '전체 문자열의 순서를 뒤집습니다.', example: '"Hello" → "olleH"',
+      fn: (t) => Array.from(t).reverse().join('')
+    },
+    {
+      id: 'reversewords', category: 'fun', name: 'sdroW esreveR', preview: 'olleH dlroW',
+      desc: '단어의 배치는 그대로 두고 각 단어 내부의 글자 순서만 뒤집습니다.', example: '"Hello World" → "olleH dlroW"',
+      fn: (t) => t.replace(/\S+/g, w => Array.from(w).reverse().join(''))
+    },
+    {
+      id: 'wide', category: 'fun', name: 'W i d e', preview: 'H e l l o',
+      desc: '모든 글자 사이에 공백을 한 칸씩 삽입합니다.', example: '"Hello" → "H e l l o"',
+      fn: (t) => Array.from(t).join(' ')
+    },
+    {
+      id: 'double', category: 'fun', name: 'DDoouubbllee', preview: 'HHeelllloo',
+      desc: '모든 글자를 두 번씩 반복합니다.', example: '"Hi" → "HHii"',
+      fn: (t) => Array.from(t).map(c => c + c).join('')
+    },
+
+    // 5. ENCODE / DECODE (Bidirectional)
+    {
+      id: 'base64', category: 'encode', name: 'Base64', preview: 'SGVsbG8gV29ybGQ=',
+      desc: 'UTF-8 텍스트를 Base64로 인코딩하거나 원본 텍스트로 디코딩합니다.', example: '"Hello" ↔ "SGVsbG8="',
+      fn: (t, opts) => {
+        if (opts.decode) {
+          try {
+            const binStr = atob(t.trim());
+            const bytes = Uint8Array.from(binStr, m => m.codePointAt(0));
+            return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+          } catch (_) {
+            return '[Base64 Decode 오류: 유효한 Base64 문자열이 아닙니다]';
+          }
+        }
+        const bytes = utf8Encoder.encode(t);
+        let binStr = '';
+        bytes.forEach(b => binStr += String.fromCharCode(b));
+        return btoa(binStr);
+      }
+    },
+    {
+      id: 'urlencode', category: 'encode', name: 'URL Encode', preview: '%ED%95%9C%EA%B8%80',
+      desc: 'URL 파라미터에 안전하게 사용할 수 있도록 퍼센트(%) 인코딩 또는 디코딩합니다.', example: '"한글" ↔ "%ED%95%9C%EA%B8%80"',
+      fn: (t, opts) => {
+        if (opts.decode) {
+          try { return decodeURIComponent(t); } catch (_) { return '[URL Decode 오류]'; }
+        }
+        return encodeURIComponent(t);
+      }
+    },
+    {
+      id: 'hex', category: 'encode', name: 'Hex (16진수)', preview: '48 65 6c 6c 6f',
+      desc: 'UTF-8 바이트를 16진수(Hexadecimal) 코드로 변환하거나 복원합니다.', example: '"A" ↔ "41"',
+      fn: (t, opts) => {
+        if (opts.decode) {
+          try {
+            const clean = t.replace(/[^0-9a-fA-F]/g, '');
+            if (clean.length % 2 !== 0) return '[Hex Decode 오류: 짝수 자릿수가 필요합니다]';
+            const bytes = new Uint8Array(clean.length / 2);
+            for (let i = 0; i < clean.length; i += 2) {
+              bytes[i / 2] = parseInt(clean.substring(i, i + 2), 16);
+            }
+            return new TextDecoder().decode(bytes);
+          } catch (_) { return '[Hex Decode 오류]'; }
+        }
+        return Array.from(utf8Encoder.encode(t)).map(b => b.toString(16).padStart(2, '0')).join(' ');
+      }
+    },
+    {
+      id: 'binary', category: 'encode', name: 'Binary (2진수)', preview: '01000001 01000010',
+      desc: '각 UTF-8 바이트를 8비트 이진수(0과 1)로 변환하거나 복원합니다.', example: '"A" ↔ "01000001"',
+      fn: (t, opts) => {
+        if (opts.decode) {
+          try {
+            const groups = t.trim().split(/\s+/).filter(Boolean);
+            const bytes = new Uint8Array(groups.map(g => parseInt(g, 2)));
+            return new TextDecoder().decode(bytes);
+          } catch (_) { return '[Binary Decode 오류]'; }
+        }
+        return Array.from(utf8Encoder.encode(t)).map(b => b.toString(2).padStart(8, '0')).join(' ');
+      }
+    },
+    {
+      id: 'morse', category: 'encode', name: 'Morse (모스부호)', preview: '... --- ...',
+      desc: '영문과 숫자를 모스 부호(점과 선)로 변환하거나 복원합니다.', example: '"SOS" ↔ "... --- ..."',
+      fn: (t, opts) => {
+        if (opts.decode) {
+          return t.trim().split(/\s+/).map(token => MORSE_REVERSE[token] || token).join('');
+        }
+        return Array.from(t.toUpperCase()).map(ch => MORSE_TABLE[ch] || ch).join(' ');
+      }
+    },
+    {
+      id: 'rot13', category: 'encode', name: 'ROT13', preview: 'Hello ↔ Uryyb',
+      desc: '알파벳을 13글자씩 밀어내는 카이사르 암호입니다 (한 번 더 적용하면 원본으로 복원).', example: '"Hello" ↔ "Uryyb"',
+      fn: (t) => t.replace(/[a-zA-Z]/g, c => {
+        const base = c <= 'Z' ? 65 : 97;
+        return String.fromCharCode(((c.charCodeAt(0) - base + 13) % 26) + base);
+      })
+    },
+    {
+      id: 'leet', category: 'encode', name: '1337 sp34k', preview: '31173 (Leet)',
+      desc: '알파벳을 모양이 비슷한 숫자(E→3, A→4, T→7 등)로 치환하거나 복원합니다.', example: '"elite" ↔ "31173"',
+      fn: (t, opts) => {
+        if (opts.decode) {
+          return Array.from(t).map(c => LEET_REVERSE[c] || c).join('');
+        }
+        return Array.from(t).map(c => LEET_TABLE[c.toUpperCase()] || c).join('');
+      }
+    },
+    {
+      id: 'nato', category: 'encode', name: 'NATO Phonetic', preview: 'Alfa Bravo Charlie',
+      desc: '영문과 숫자를 국제 무선 통신용 포네틱 코드로 변환하거나 복원합니다.', example: '"AB" ↔ "Alfa Bravo"',
+      fn: (t, opts) => {
+        if (opts.decode) {
+          return t.trim().split(/\s+/).map(w => NATO_REVERSE[w.toLowerCase()] || w).join('');
+        }
+        return Array.from(t.toUpperCase()).map(c => NATO_TABLE[c] || c).join(' ');
+      }
+    },
+
+    // 6. UNICODE STYLES
+    {
+      id: 'unibold', category: 'unicode', name: '𝗕𝗼𝗹𝗱', preview: '𝗛𝗲𝗹𝗹𝗼 𝗪𝗼𝗿𝗹𝗱',
+      desc: 'HTML 태그 없이 SNS나 메신저에서도 굵게 보이는 수학 산세리프 볼드 유니코드입니다.', example: '"Hello" → "𝗛𝗲𝗹𝗹𝗼"',
+      fn: (t) => mapByOffset(t, 0x1D5D4, 0x1D5EE, 0x1D7EC)
+    },
+    {
+      id: 'uniitalic', category: 'unicode', name: '𝘐𝘵𝘢𝘭𝘪𝘤', preview: '𝘏𝘦𝘭𝘭𝘰 𝘞𝘰𝘳𝘭𝘥',
+      desc: '기울임꼴 산세리프 유니코드 문자로 변환합니다.', example: '"Hello" → "𝘏𝘦𝘭𝘭𝘰"',
+      fn: (t) => mapByOffset(t, 0x1D608, 0x1D622)
+    },
+    {
+      id: 'unibolditalic', category: 'unicode', name: '𝘽𝙤𝙡𝙙 𝙄𝙩𝙖𝙡𝙞𝙘', preview: '𝙃𝙚𝙡𝙡𝙤 𝙒𝙤𝙧𝙡𝙙',
+      desc: '굵은 기울임꼴 유니코드 문자로 변환합니다.', example: '"Hello" → "𝙃𝙚𝙡𝙡𝙤"',
+      fn: (t) => mapByOffset(t, 0x1D63C, 0x1D656)
+    },
+    {
+      id: 'unimonospace', category: 'unicode', name: '𝚖𝚘𝚗𝚘𝚜𝚙𝚊𝚌𝚎', preview: '𝙷𝚎𝚕𝚕𝚘 𝚆𝚘𝚛𝚕𝚍',
+      desc: '타자기 스타일의 고정폭(Monospace) 유니코드 문자로 변환합니다.', example: '"Hello" → "𝙷𝚎𝚕𝚕𝚘"',
+      fn: (t) => mapByOffset(t, 0x1D670, 0x1D68A, 0x1D7F6)
+    },
+    {
+      id: 'uniscript', category: 'unicode', name: '𝓑𝓸𝓵𝓭 𝓢𝓬𝓻𝓲𝓹𝓽', preview: '𝓗𝓮𝓵𝓵𝓸 𝓦𝓸𝓻𝓵𝓭',
+      desc: '우아한 필기체(Bold Script) 유니코드 문자로 변환합니다.', example: '"Hello" → "𝓗𝓮𝓵𝓵𝓸"',
+      fn: (t) => mapByOffset(t, 0x1D4D0, 0x1D4EA)
+    },
+    {
+      id: 'unifraktur', category: 'unicode', name: '𝕭𝖔𝖑𝖉 𝕱𝖗𝖆𝖐𝖙𝖚𝖗', preview: '𝕳𝖊𝖑𝖑𝖔 𝖂𝖔𝖗𝖑𝖉',
+      desc: '중세 고딕(Blackletter Fraktur) 스타일 유니코드 문자로 변환합니다.', example: '"Hello" → "𝕳𝖊𝖑𝖑𝖔"',
+      fn: (t) => mapByOffset(t, 0x1D56C, 0x1D586)
+    },
+    {
+      id: 'unioutline', category: 'unicode', name: '𝕆𝕦𝕥𝕝𝕚𝕟𝕖', preview: 'ℍ𝕖𝕝𝕝𝕠 𝕎𝕠𝕣𝕝𝕕',
+      desc: '칠판 볼드체(Double-struck) 윤곽선 유니코드 문자로 변환합니다.', example: '"Hello" → "ℍ𝕖𝕝𝕝𝕠"',
+      fn: (t) => mapByOffset(t, 0x1D538, 0x1D552, 0x1D7D8, { C:'ℂ', H:'ℍ', N:'ℕ', P:'ℙ', Q:'ℚ', R:'ℝ', Z:'ℤ' })
+    },
+    {
+      id: 'unicircled', category: 'unicode', name: 'Ⓒⓘⓡⓒⓛⓔⓓ', preview: 'Ⓗⓔⓛⓛⓞ',
+      desc: '원 안에 들어간 알파벳과 숫자로 변환합니다.', example: '"Hello" → "Ⓗⓔⓛⓛⓞ"',
+      fn: (t) => mapByOffset(t, 0x24B6, 0x24D0, null, { '0':'⓪','1':'①','2':'②','3':'③','4':'④','5':'⑤','6':'⑥','7':'⑦','8':'⑧','9':'⑨' })
+    },
+    {
+      id: 'unisquared', category: 'unicode', name: '🅂🅀🅄🄰🅁🄴🄳', preview: '🄷🄴🄻🄻🄾',
+      desc: '네모 상자 안에 들어간 대문자 유니코드로 변환합니다.', example: '"Hello" → "🄷🄴🄻🄻🄾"',
+      fn: (t) => mapByOffset(t.toUpperCase(), 0x1F130, null)
+    },
+    {
+      id: 'unifullwidth', category: 'unicode', name: 'Ｆｕｌｌｗｉｄｔｈ', preview: 'Ｈｅｌｌｏ！',
+      desc: '영문과 기호를 전각(2바이트 폭) 문자로 변환합니다.', example: '"Hello" → "Ｈｅｌｌｏ"',
+      fn: (t) => Array.from(t).map(c => {
+        const code = c.charCodeAt(0);
+        if (code === 32) return '\u3000';
+        if (code >= 33 && code <= 126) return String.fromCharCode(code + 0xFEE0);
+        return c;
+      }).join('')
+    },
+    {
+      id: 'unisuperscript', category: 'unicode', name: 'ˢᵘᵖᵉʳˢᶜʳⁱᵖᵗ', preview: 'ᴴᵉˡˡᵒ ¹²³',
+      desc: '위첨자(작게 떠 있는 글자) 유니코드로 변환합니다.', example: '"hello 123" → "ʰᵉˡˡᵒ ¹²³"',
+      fn: (t) => Array.from(t.toLowerCase()).map(c => SUPERSCRIPT_MAP[c] || c).join('')
+    },
+    {
+      id: 'unisubscript', category: 'unicode', name: 'ₛᵤᵦₛ꜀ᵣᵢₚₜ', preview: 'ₕₑₗₗₒ ₁₂₃',
+      desc: '아래첨자 유니코드로 변환합니다.', example: '"h2o" → "ₕ₂ₒ"',
+      fn: (t) => Array.from(t.toLowerCase()).map(c => SUBSCRIPT_MAP[c] || c).join('')
+    },
+    {
+      id: 'unistrike', category: 'unicode', name: 'S̶t̶r̶i̶k̶e̶', preview: 'H̶e̶l̶l̶o̶',
+      desc: '유니코드 결합 문자를 이용해 취소선을 긋습니다.', example: '"Hello" → "H̶e̶l̶l̶o̶"',
+      fn: (t) => Array.from(t).map(c => c === '\n' ? c : c + '\u0336').join('')
+    },
+    {
+      id: 'uniunderline', category: 'unicode', name: 'U̲n̲d̲e̲r̲l̲i̲n̲e̲', preview: 'H̲e̲l̲l̲o̲',
+      desc: '유니코드 결합 문자를 이용해 밑줄을 긋습니다.', example: '"Hello" → "H̲e̲l̲l̲o̲"',
+      fn: (t) => Array.from(t).map(c => c === '\n' ? c : c + '\u0332').join('')
+    },
+    {
+      id: 'uniupsidedown', category: 'unicode', name: 'uʍop ǝpᴉsd∩', preview: 'pןɹoM oןןǝH',
+      desc: '글자를 위아래로 뒤집고 역순으로 배치합니다.', example: '"Hello" → "oןןǝH"',
+      fn: (t) => Array.from(t).reverse().map(c => UPSIDE_DOWN_MAP[c] || c).join('')
+    },
+    {
+      id: 'unimirror', category: 'unicode', name: 'ɿoɿɿiM (거울)', preview: 'b|ɿoW o||ɘH',
+      desc: '거울에 비친 것처럼 좌우가 반전된 문자로 변환합니다.', example: '"Hello" → "o||ɘH"',
+      fn: (t) => Array.from(t).reverse().map(c => MIRROR_MAP[c] || c).join('')
+    },
+    {
+      id: 'unizalgo', category: 'unicode', name: 'Z̷̢a̸̡l̵̨g̶̢o̷̧ (글리치)', preview: 'H̵̡e̷̢l̸̡l̶̨o̷',
+      desc: '발음 구별 기호를 겹쳐 노이즈가 낀 듯한 글리치 텍스트를 만듭니다.', example: '"Hello" → "H̵̡e̷̢l̸̡l̶̨o̷"',
+      fn: (t) => {
+        const marks = ['\u030d','\u030e','\u0304','\u0305','\u033f','\u0311','\u0306','\u0310','\u0352','\u0337','\u0338','\u0321','\u0322','\u0327','\u0328'];
+        return Array.from(t).map(c => {
+          if (/\s/.test(c)) return c;
+          let out = c;
+          for (let i = 0; i < 3; i++) {
+            out += marks[Math.floor(Math.random() * marks.length)];
+          }
+          return out;
+        }).join('');
+      }
+    }
+  ];
+
+  const CATEGORY_LABELS = {
+    basic: '기본 대소문자 (Basic)',
+    programming: '프로그래밍 네이밍 규칙 (Programming)',
+    clean: '공백 정리 및 라인 도구 (Clean & Line)',
+    fun: '재미 및 특수 효과 (Fun)',
+    encode: '인코딩 및 암호 복호화 (Encode / Decode)',
+    unicode: '유니코드 텍스트 스타일 (Unicode Styles)'
+  };
+
+  // --- State ---
+  let state = {
+    theme: 'light',
+    activeCategory: 'all',
+    selectedConvId: 'camelcase',
+    lineByLine: true,
+    liveMode: true,
+    decodeMode: false,
+    lastInput: 'Hello World! Welcome to Mini Text Converter.\nparseHTMLString & getUserID_v2\n안녕하세요 반갑습니다 2026'
+  };
+
+  // DOM Elements
+  const inputText = document.getElementById('inputText');
+  const outputText = document.getElementById('outputText');
+  const activeOpBadge = document.getElementById('activeOpBadge');
+  const conversionsContainer = document.getElementById('conversionsContainer');
+  const lineByLineCheck = document.getElementById('lineByLineCheck');
+  const liveModeCheck = document.getElementById('liveModeCheck');
+  const modeEncodeBtn = document.getElementById('modeEncodeBtn');
+  const modeDecodeBtn = document.getElementById('modeDecodeBtn');
+  const helpModal = document.getElementById('helpModal');
+  const helpModalBody = document.getElementById('helpModalBody');
+  const helpSearchInput = document.getElementById('helpSearchInput');
+
+  // --- Initialization ---
+  function init() {
+    loadSavedState();
+
+    document.documentElement.setAttribute('data-theme', state.theme);
+    lineByLineCheck.checked = state.lineByLine;
+    liveModeCheck.checked = state.liveMode;
+    inputText.value = state.lastInput;
+    updateEncodeModeButtons();
+
+    renderConversionDeck();
+    renderHelpModalContent('');
+    runConversion(state.selectedConvId);
+    updateMetrics();
+  }
+
+  function loadSavedState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      state = { ...state, ...parsed };
+    } catch (_) {}
+  }
+
+  function saveState() {
+    try {
+      state.lastInput = inputText.value;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (_) {}
+  }
+
+  function showToast(msg) {
+    const toast = document.getElementById('toastBox');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => toast.classList.remove('show'), 2200);
+  }
+
+  // --- Metrics Calculation ---
+  function computeStats(str) {
+    const chars = Array.from(str).length;
+    const trimmed = str.trim();
+    const words = trimmed ? trimmed.split(/\s+/).length : 0;
+    const lines = str ? str.split(/\r?\n/).length : 0;
+    const sentences = trimmed ? (trimmed.match(/[.!?]+(?=\s|$)/g) || [1]).length : 0;
+    const bytes = utf8Encoder.encode(str).length;
+    return { chars, words, lines, sentences, bytes };
+  }
+
+  function formatBytes(b) {
+    if (b < 1024) return `${b} B`;
+    if (b < 1048576) return `${(b / 1024).toFixed(1)} KB`;
+    return `${(b / 1048576).toFixed(2)} MB`;
+  }
+
+  function updateMetrics() {
+    const inStat = computeStats(inputText.value);
+    document.getElementById('inputMetrics').innerHTML = `
+      <span>글자: <b>${inStat.chars.toLocaleString()}</b></span>
+      <span>단어: <b>${inStat.words.toLocaleString()}</b></span>
+      <span>줄: <b>${inStat.lines.toLocaleString()}</b></span>
+      <span>문장: <b>${inStat.sentences.toLocaleString()}</b></span>
+      <span>바이트: <b>${formatBytes(inStat.bytes)}</b></span>
+    `;
+
+    const outStat = computeStats(outputText.value);
+    document.getElementById('outputMetrics').innerHTML = `
+      <span>글자: <b>${outStat.chars.toLocaleString()}</b></span>
+      <span>단어: <b>${outStat.words.toLocaleString()}</b></span>
+      <span>줄: <b>${outStat.lines.toLocaleString()}</b></span>
+      <span>바이트: <b>${formatBytes(outStat.bytes)}</b></span>
+    `;
+  }
+
+  // --- Conversion Execution ---
+  function runConversion(convId) {
+    const item = CONVERSIONS.find(c => c.id === convId) || CONVERSIONS[0];
+    state.selectedConvId = item.id;
+
+    const suffix = (item.category === 'encode' && state.decodeMode && item.id !== 'rot13') ? ' (Decode)' : '';
+    activeOpBadge.textContent = item.name + suffix;
+
+    const result = item.fn(inputText.value, {
+      lineByLine: state.lineByLine,
+      decode: state.decodeMode
+    });
+
+    outputText.value = result;
+    updateActiveButtonHighlight();
+    updateMetrics();
+    saveState();
+  }
+
+  function updateActiveButtonHighlight() {
+    document.querySelectorAll('.conv-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.id === state.selectedConvId);
+    });
+  }
+
+  // --- Render Conversion Buttons Deck ---
+  function renderConversionDeck() {
+    conversionsContainer.innerHTML = '';
+
+    const categoriesToRender = state.activeCategory === 'all'
+      ? Object.keys(CATEGORY_LABELS)
+      : [state.activeCategory];
+
+    categoriesToRender.forEach(catKey => {
+      const items = CONVERSIONS.filter(c => c.category === catKey);
+      if (items.length === 0) return;
+
+      const sec = document.createElement('div');
+      sec.className = 'conv-section';
+
+      const label = document.createElement('div');
+      label.className = 'conv-section-label';
+      label.textContent = CATEGORY_LABELS[catKey];
+      sec.appendChild(label);
+
+      const grid = document.createElement('div');
+      grid.className = 'conv-grid';
+
+      items.forEach(item => {
+        const btn = document.createElement('button');
+        btn.className = `conv-btn ${item.id === state.selectedConvId ? 'active' : ''}`;
+        btn.dataset.id = item.id;
+        btn.title = `${item.desc}\n예시: ${item.example}`;
+        btn.innerHTML = `
+          <span class="conv-btn-name">${item.name}</span>
+          <span class="conv-btn-preview">${item.preview}</span>
+        `;
+        btn.addEventListener('click', () => {
+          runConversion(item.id);
+        });
+        grid.appendChild(btn);
+      });
+
+      sec.appendChild(grid);
+      conversionsContainer.appendChild(sec);
+    });
+  }
+
+  // --- Render Searchable Help Modal ---
+  function renderHelpModalContent(query = '') {
+    const q = query.trim().toLowerCase();
+    helpModalBody.innerHTML = '';
+
+    Object.keys(CATEGORY_LABELS).forEach(catKey => {
+      const filtered = CONVERSIONS.filter(c => {
+        if (c.category !== catKey) return false;
+        if (!q) return true;
+        return (
+          c.name.toLowerCase().includes(q) ||
+          c.desc.toLowerCase().includes(q) ||
+          c.example.toLowerCase().includes(q)
+        );
+      });
+
+      if (filtered.length === 0) return;
+
+      const block = document.createElement('div');
+      block.innerHTML = `<div class="help-category-title">${CATEGORY_LABELS[catKey]}</div>`;
+
+      const table = document.createElement('table');
+      table.className = 'help-table';
+      table.innerHTML = `
+        <thead>
+          <tr>
+            <th style="width: 190px;">변환 이름</th>
+            <th>기능 설명</th>
+            <th style="width: 270px;">변환 예시 (Before → After)</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${filtered.map(item => `
+            <tr>
+              <td><b>${item.name}</b></td>
+              <td>${item.desc}</td>
+              <td><span class="help-code">${item.example}</span></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      `;
+
+      block.appendChild(table);
+      helpModalBody.appendChild(block);
+    });
+
+    if (helpModalBody.children.length === 0) {
+      helpModalBody.innerHTML = `<div style="text-align:center; padding: 36px; color: var(--text-muted);">검색어와 일치하는 변환 규칙이 없습니다.</div>`;
+    }
+  }
+
+  // --- Event Listeners ---
+  inputText.addEventListener('input', () => {
+    if (state.liveMode) {
+      runConversion(state.selectedConvId);
+    } else {
+      updateMetrics();
+      saveState();
+    }
+  });
+
+  outputText.addEventListener('input', updateMetrics);
+
+  // Category Tabs
+  document.getElementById('categoryTabs').addEventListener('click', (e) => {
+    const tab = e.target.closest('.cat-tab');
+    if (!tab) return;
+    state.activeCategory = tab.dataset.cat;
+    document.querySelectorAll('.cat-tab').forEach(t => t.classList.toggle('active', t === tab));
+    renderConversionDeck();
+    saveState();
+  });
+
+  // Options Toggles
+  lineByLineCheck.addEventListener('change', () => {
+    state.lineByLine = lineByLineCheck.checked;
+    runConversion(state.selectedConvId);
+  });
+
+  liveModeCheck.addEventListener('change', () => {
+    state.liveMode = liveModeCheck.checked;
+    if (state.liveMode) runConversion(state.selectedConvId);
+    saveState();
+  });
+
+  function updateEncodeModeButtons() {
+    modeEncodeBtn.classList.toggle('active', !state.decodeMode);
+    modeDecodeBtn.classList.toggle('active', state.decodeMode);
+  }
+
+  modeEncodeBtn.addEventListener('click', () => {
+    state.decodeMode = false;
+    updateEncodeModeButtons();
+    runConversion(state.selectedConvId);
+  });
+
+  modeDecodeBtn.addEventListener('click', () => {
+    state.decodeMode = true;
+    updateEncodeModeButtons();
+    runConversion(state.selectedConvId);
+  });
+
+  // Input / Output Toolbar Actions
+  document.getElementById('pasteBtn').addEventListener('click', async () => {
+    try {
+      const clipText = await navigator.clipboard.readText();
+      inputText.value = clipText;
+      inputText.dispatchEvent(new Event('input'));
+      showToast('클립보드 내용을 붙여넣었습니다.');
+    } catch (_) {
+      inputText.focus();
+      showToast('브라우저 권한 제한으로 직접 Ctrl+V를 눌러주세요.');
+    }
+  });
+
+  document.getElementById('clearInputBtn').addEventListener('click', () => {
+    inputText.value = '';
+    outputText.value = '';
+    updateMetrics();
+    saveState();
+    inputText.focus();
+  });
+
+  document.getElementById('sampleBtn').addEventListener('click', () => {
+    inputText.value = 'Hello World! Welcome to Mini Text Converter.\nparseHTMLString & getUserID_v2\n안녕하세요 반갑습니다 2026';
+    runConversion(state.selectedConvId);
+    showToast('샘플 텍스트를 불러왔습니다.');
+  });
+
+  document.getElementById('chainToInputBtn').addEventListener('click', () => {
+    if (!outputText.value) return;
+    inputText.value = outputText.value;
+    updateMetrics();
+    saveState();
+    showToast('변환 결과를 왼쪽 입력창으로 가져왔습니다.');
+  });
+
+  document.getElementById('copyResultBtn').addEventListener('click', () => {
+    if (!outputText.value) return;
+    outputText.select();
+    document.execCommand('copy');
+    window.getSelection()?.removeAllRanges();
+    showToast('변환 결과가 클립보드에 복사되었습니다.');
+  });
+
+  // File Open & Save
+  const fileInput = document.getElementById('fileInput');
+  document.getElementById('openFileBtn').addEventListener('click', () => {
+    fileInput.value = '';
+    fileInput.click();
+  });
+
+  fileInput.addEventListener('change', async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const text = await file.text();
+    inputText.value = text;
+    runConversion(state.selectedConvId);
+    showToast(`'${file.name}' 파일을 불러왔습니다.`);
+  });
+
+  document.getElementById('saveResultBtn').addEventListener('click', () => {
+    const content = outputText.value;
+    if (!content) return;
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `converted_${state.selectedConvId}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    showToast('변환 결과가 파일로 저장되었습니다.');
+  });
+
+  // Theme Toggle
+  document.getElementById('themeToggleBtn').addEventListener('click', () => {
+    state.theme = state.theme === 'light' ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', state.theme);
+    saveState();
+  });
+
+  // Help Modal Controls
+  document.getElementById('openHelpBtn').addEventListener('click', () => {
+    helpModal.classList.add('open');
+    helpSearchInput.focus();
+  });
+
+  document.getElementById('closeHelpBtn').addEventListener('click', () => {
+    helpModal.classList.remove('open');
+  });
+
+  helpModal.addEventListener('click', (e) => {
+    if (e.target === helpModal) helpModal.classList.remove('open');
+  });
+
+  helpSearchInput.addEventListener('input', (e) => {
+    renderHelpModalContent(e.target.value);
+  });
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && helpModal.classList.contains('open')) {
+      helpModal.classList.remove('open');
+    }
+  });
+
+  window.onload = init;
+</script>
+</body>
+</html>

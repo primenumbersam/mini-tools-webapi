@@ -1,0 +1,1929 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Local Web Image Editor</title>
+  <!-- Tailwind CSS for responsive utility layout combined with custom design tokens -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --border: #e2e8f0;
+      --border-focus: #3b82f6;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --badge-bg: #eff6ff;
+      --danger: #ef4444;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Pretendard', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.5;
+      padding: 24px 16px 48px;
+      min-height: 100vh;
+    }
+
+    .app-container {
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    .tool-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: var(--primary);
+      background: var(--badge-bg);
+      padding: 4px 10px;
+      border-radius: 999px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+
+    /* Buttons & Inputs */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      height: 38px;
+      padding: 0 14px;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      border: 1px solid var(--border);
+      background: #ffffff;
+      color: #334155;
+      user-select: none;
+    }
+    .btn:hover:not(:disabled) {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+    }
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: var(--primary-hover);
+      border-color: var(--primary-hover);
+    }
+    .btn-active {
+      background: #eff6ff;
+      color: var(--primary);
+      border-color: #93c5fd;
+    }
+    .btn-danger {
+      color: var(--danger);
+      border-color: #fecaca;
+      background: #fef2f2;
+    }
+    .btn-danger:hover:not(:disabled) {
+      background: #fee2e2;
+    }
+    .btn-icon {
+      padding: 0;
+      width: 34px;
+      height: 34px;
+    }
+
+    .input-field, select, textarea {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.875rem;
+      background: #ffffff;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .input-field:focus, select:focus, textarea:focus {
+      border-color: var(--border-focus);
+    }
+
+    label.field-label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #475569;
+      margin-bottom: 4px;
+    }
+
+    /* Viewport & Canvas */
+    .canvas-viewport {
+      position: relative;
+      width: 100%;
+      min-height: 520px;
+      background: #0f172a;
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 24px;
+      user-select: none;
+      border: 2px solid transparent;
+      transition: border-color 0.15s;
+    }
+    .canvas-viewport.dragover {
+      border-color: #38bdf8;
+      background: #1e293b;
+    }
+
+    canvas#editorCanvas {
+      display: block;
+      max-width: 100%;
+      max-height: 620px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+      border-radius: 2px;
+    }
+
+    /* Layer Item */
+    .layer-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #ffffff;
+      cursor: pointer;
+      transition: all 0.12s;
+      font-size: 0.85rem;
+    }
+    .layer-item:hover {
+      background: #f8fafc;
+    }
+    .layer-item.active {
+      border-color: var(--primary);
+      background: #eff6ff;
+    }
+
+    /* Toast notification */
+    #toastBox {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #1e293b;
+      color: #ffffff;
+      padding: 10px 18px;
+      border-radius: 999px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s ease;
+      z-index: 1000;
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2);
+    }
+    #toastBox.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<div class="app-container">
+  <!-- Header -->
+  <header class="flex flex-col md:flex-row md:items-end justify-between mb-5 gap-4">
+    <div>
+      <div class="tool-badge">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        WEB API IMAGE EDITOR
+      </div>
+      <h1 class="text-2xl font-bold tracking-tight">이미지 에디터 (Layer & Crop Studio)</h1>
+      <p class="text-sm text-slate-500 mt-0.5">빈 캔버스 위에 이미지, 텍스트 상자, 도형 레이어를 자유롭게 배치하고 원본 해상도로 추출합니다. (클립보드 Ctrl+V 붙여넣기 지원)</p>
+    </div>
+
+    <!-- Undo / Redo / Reset Controls -->
+    <div class="flex items-center gap-2">
+      <button class="btn" id="undoBtn" title="실행 취소 (Ctrl+Z)" disabled>
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+        실행 취소
+      </button>
+      <button class="btn" id="redoBtn" title="다시 실행 (Ctrl+Y)" disabled>
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/></svg>
+        다시 실행
+      </button>
+      <button class="btn btn-danger" id="clearCanvasBtn" title="모든 레이어 초기화">
+        초기화
+      </button>
+    </div>
+  </header>
+
+  <!-- Top Toolbar Card -->
+  <div class="card mb-5">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <!-- Left: Canvas Setup -->
+      <div class="flex flex-wrap items-center gap-3">
+        <div>
+          <label class="field-label">캔버스 규격</label>
+          <select id="presetSelect" class="w-44 h-[38px] py-0">
+            <option value="1080x1080">1:1 정방형 (1080×1080)</option>
+            <option value="1200x630">오픈그래프/배너 (1200×630)</option>
+            <option value="1080x1350">인스타 피드 (1080×1350)</option>
+            <option value="1080x1920">릴스/쇼츠 (1080×1920)</option>
+            <option value="860x1200">상세페이지 (860×1200)</option>
+            <option value="custom">직접 입력</option>
+          </select>
+        </div>
+
+        <div class="flex items-end gap-1.5">
+          <div>
+            <label class="field-label">가로 (px)</label>
+            <input type="number" id="canvasWidthInput" class="input-field w-24 h-[38px]" value="1080" min="100" max="4096">
+          </div>
+          <span class="mb-2 text-slate-400 font-bold">×</span>
+          <div>
+            <label class="field-label">세로 (px)</label>
+            <input type="number" id="canvasHeightInput" class="input-field w-24 h-[38px]" value="1080" min="100" max="4096">
+          </div>
+          <button class="btn h-[38px]" id="applySizeBtn">적용</button>
+        </div>
+
+        <div class="h-8 w-[1px] bg-slate-200 mx-1 hidden sm:block"></div>
+
+        <!-- Background Color & Transparency -->
+        <div>
+          <label class="field-label">배경 색상</label>
+          <div class="flex items-center gap-2">
+            <input type="color" id="bgColorInput" value="#ffffff" class="w-9 h-[38px] p-0.5 border border-slate-200 rounded-lg cursor-pointer bg-white">
+            <label class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 cursor-pointer select-none bg-slate-100 px-2.5 h-[38px] rounded-lg border border-slate-200">
+              <input type="checkbox" id="bgTransparentCheck" class="rounded text-blue-600">
+              투명 배경
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Add Layer Actions & Crop Mode -->
+      <div class="flex flex-wrap items-end gap-2">
+        <input type="file" id="imageLayerInput" accept="image/*" multiple class="hidden">
+        
+        <button class="btn" id="addImageBtn">
+          <svg class="w-4 h-4 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          + 이미지 추가
+        </button>
+
+        <button class="btn" id="addTextBtn">
+          <svg class="w-4 h-4 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+          + 텍스트 상자
+        </button>
+
+        <button class="btn" id="addShapeBtn">
+          <svg class="w-4 h-4 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="4"/></svg>
+          + 도형/배지
+        </button>
+
+        <div class="h-8 w-[1px] bg-slate-200 mx-1 hidden sm:block"></div>
+
+        <button class="btn" id="toggleCropModeBtn">
+          <svg class="w-4 h-4 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg>
+          캔버스 자르기 모드
+        </button>
+      </div>
+    </div>
+
+    <!-- Active Crop Mode Action Bar (Hidden by default) -->
+    <div id="cropModeBar" class="hidden mt-4 pt-3 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3 bg-amber-50/70 -mx-5 -mb-5 px-5 py-3 rounded-b-2xl">
+      <div class="flex items-center gap-3">
+        <span class="text-xs font-bold uppercase tracking-wider px-2 py-1 bg-amber-200 text-amber-900 rounded">CROP MODE</span>
+        <span class="text-sm font-medium text-slate-700">드래그 핸들을 조절해 잘라낼 영역을 지정하세요.</span>
+        <select id="cropAspectSelect" class="w-36 h-8 py-0 text-xs">
+          <option value="free">자유 비율</option>
+          <option value="1:1">1:1 정방형</option>
+          <option value="16:9">16:9 와이드</option>
+          <option value="4:3">4:3 표준</option>
+        </select>
+      </div>
+      <div class="flex items-center gap-2">
+        <button class="btn btn-primary h-8 text-xs" id="applyCropBtn">자르기 적용</button>
+        <button class="btn h-8 text-xs" id="cancelCropBtn">취소</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Workspace Grid -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+    
+    <!-- Center/Left: Interactive Canvas Area (8 Cols) -->
+    <div class="lg:col-span-8 flex flex-col gap-4">
+      <div class="card p-4">
+        <div class="canvas-viewport" id="viewport">
+          <canvas id="editorCanvas"></canvas>
+        </div>
+
+        <!-- Bottom Info & Quick Tips Bar -->
+        <div class="mt-3 flex flex-wrap items-center justify-between text-xs text-slate-500 gap-2 px-1">
+          <div class="flex items-center gap-4">
+            <span id="canvasResInfo" class="font-semibold text-slate-700">캔버스: 1080 × 1080px</span>
+            <span id="selectedCoordInfo">선택된 요소: 없음</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <span>💡 <b>팁:</b> 이미지를 화면에 드래그 앤 드롭하거나 <b>Ctrl+V</b>로 바로 붙여넣으세요.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 03: Export & Download Card -->
+      <div class="card">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2.5">
+            <span class="text-xs font-bold text-slate-400">EXPORT</span>
+            <h2 class="text-base font-bold">고해상도 이미지 추출 및 저장</h2>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+          <div>
+            <label class="field-label" for="exportFormat">출력 포맷</label>
+            <select id="exportFormat">
+              <option value="image/png">PNG (무손실 / 투명 배경 지원)</option>
+              <option value="image/webp">WebP (고효율 압축 / 투명 지원)</option>
+              <option value="image/jpeg">JPG (일반 사진용)</option>
+            </select>
+          </div>
+
+          <div id="exportQualityGroup" class="opacity-40">
+            <div class="flex justify-between mb-1">
+              <label class="field-label mb-0" for="exportQuality">품질 (%)</label>
+              <span class="text-xs font-bold text-slate-700" id="exportQualityVal">92%</span>
+            </div>
+            <input type="range" id="exportQuality" min="10" max="100" value="92" step="2" disabled class="w-full accent-blue-600 cursor-pointer">
+          </div>
+
+          <button class="btn btn-primary h-[40px] w-full text-sm" id="exportBtn">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            완성 이미지 생성 및 다운로드
+          </button>
+        </div>
+
+        <!-- Export Result Box -->
+        <div id="exportResultBox" class="hidden mt-4 p-3.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+          <div>
+            <div id="exportFileName" class="text-sm font-bold text-slate-800"></div>
+            <div id="exportFileMeta" class="text-xs text-slate-500 mt-0.5"></div>
+          </div>
+          <a id="downloadLink" class="btn btn-primary h-9 text-xs" download>다시 다운로드</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Sidebar: Property Inspector & Layer Stack (4 Cols) -->
+    <div class="lg:col-span-4 flex flex-col gap-5">
+      
+      <!-- Dynamic Property Inspector -->
+      <div class="card">
+        <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
+          <h2 class="text-base font-bold">선택 레이어 속성</h2>
+          <span id="inspectorBadge" class="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-600">미선택</span>
+        </div>
+
+        <!-- Empty State -->
+        <div id="inspectorEmpty" class="py-8 text-center text-sm text-slate-400">
+          캔버스에서 요소를 클릭하거나<br>상단 버튼으로 새 레이어를 추가하세요.
+        </div>
+
+        <!-- Active Inspector Controls -->
+        <div id="inspectorContent" class="hidden space-y-4">
+          
+          <!-- Common Quick Alignment & Layer Actions -->
+          <div>
+            <label class="field-label">정렬 및 배치</label>
+            <div class="grid grid-cols-6 gap-1.5">
+              <button class="btn btn-icon w-full" id="alignCenterHBtn" title="가로 중앙 정렬">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="2" x2="12" y2="22"/><rect x="5" y="8" width="14" height="8" rx="1"/></svg>
+              </button>
+              <button class="btn btn-icon w-full" id="alignCenterVBtn" title="세로 중앙 정렬">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="2" y1="12" x2="22" y2="12"/><rect x="8" y="5" width="8" height="14" rx="1"/></svg>
+              </button>
+              <button class="btn btn-icon w-full" id="layerUpBtn" title="한 단계 앞으로">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>
+              </button>
+              <button class="btn btn-icon w-full" id="layerDownBtn" title="한 단계 뒤로">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <button class="btn btn-icon w-full" id="duplicateLayerBtn" title="레이어 복제">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              </button>
+              <button class="btn btn-icon btn-danger w-full" id="deleteLayerBtn" title="레이어 삭제 (Delete)">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Common Opacity -->
+          <div>
+            <div class="flex justify-between mb-1">
+              <label class="field-label mb-0">불투명도 (Opacity)</label>
+              <span class="text-xs font-bold text-slate-600" id="propOpacityVal">100%</span>
+            </div>
+            <input type="range" id="propOpacity" min="5" max="100" value="100" class="w-full accent-blue-600 cursor-pointer">
+          </div>
+
+          <!-- TEXT LAYER SPECIFIC -->
+          <div id="textPropsGroup" class="hidden space-y-3 pt-2 border-t border-slate-100">
+            <div>
+              <label class="field-label">텍스트 내용 (줄바꿈 지원)</label>
+              <textarea id="propTextContent" rows="3" class="input-field" placeholder="내용을 입력하세요"></textarea>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2.5">
+              <div>
+                <label class="field-label">폰트 종류</label>
+                <select id="propFontFamily">
+                  <option value="Pretendard, sans-serif">고딕 (Pretendard)</option>
+                  <option value="Georgia, serif">명조 (Serif)</option>
+                  <option value="monospace">고정폭 (Monospace)</option>
+                  <option value="Impact, sans-serif">임팩트 (Impact)</option>
+                </select>
+              </div>
+              <div>
+                <label class="field-label">크기 (px)</label>
+                <input type="number" id="propFontSize" class="input-field" min="10" max="400" value="56">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2">
+              <div>
+                <label class="field-label">글자 색상</label>
+                <input type="color" id="propTextColor" class="w-full h-9 p-0.5 border border-slate-200 rounded-lg cursor-pointer bg-white" value="#0f172a">
+              </div>
+              <div>
+                <label class="field-label">굵기</label>
+                <select id="propFontWeight" class="h-9 py-0">
+                  <option value="400">보통</option>
+                  <option value="600">세미볼드</option>
+                  <option value="800">두껍게 (Bold)</option>
+                </select>
+              </div>
+              <div>
+                <label class="field-label">정렬</label>
+                <select id="propTextAlign" class="h-9 py-0">
+                  <option value="left">왼쪽</option>
+                  <option value="center">가운데</option>
+                  <option value="right">오른쪽</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Text Background Box -->
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200/80 space-y-2.5">
+              <div class="flex items-center justify-between">
+                <label class="inline-flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
+                  <input type="checkbox" id="propTextBgEnable" class="rounded text-blue-600">
+                  텍스트 배경 박스 활성화
+                </label>
+                <input type="color" id="propTextBgColor" value="#fef08a" class="w-7 h-7 p-0.5 border border-slate-200 rounded cursor-pointer bg-white">
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="field-label">여백 (Padding)</label>
+                  <input type="number" id="propTextBgPad" class="input-field h-8 text-xs" min="0" max="100" value="18">
+                </div>
+                <div>
+                  <label class="field-label">모서리 둥글기</label>
+                  <input type="number" id="propTextBgRadius" class="input-field h-8 text-xs" min="0" max="100" value="12">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SHAPE LAYER SPECIFIC -->
+          <div id="shapePropsGroup" class="hidden space-y-3 pt-2 border-t border-slate-100">
+            <div class="grid grid-cols-2 gap-2.5">
+              <div>
+                <label class="field-label">도형 형태</label>
+                <select id="propShapeType">
+                  <option value="rect">사각형 / 배지</option>
+                  <option value="circle">원형 / 타원</option>
+                </select>
+              </div>
+              <div>
+                <label class="field-label">모서리 둥글기 (px)</label>
+                <input type="number" id="propShapeRadius" class="input-field" min="0" max="500" value="24">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2">
+              <div>
+                <label class="field-label">채우기 색상</label>
+                <input type="color" id="propShapeFill" class="w-full h-9 p-0.5 border border-slate-200 rounded-lg cursor-pointer bg-white" value="#3b82f6">
+              </div>
+              <div>
+                <label class="field-label">테두리 색상</label>
+                <input type="color" id="propShapeStroke" class="w-full h-9 p-0.5 border border-slate-200 rounded-lg cursor-pointer bg-white" value="#1d4ed8">
+              </div>
+              <div>
+                <label class="field-label">테두리 두께</label>
+                <input type="number" id="propShapeStrokeWidth" class="input-field h-9" min="0" max="50" value="0">
+              </div>
+            </div>
+          </div>
+
+          <!-- IMAGE LAYER SPECIFIC -->
+          <div id="imagePropsGroup" class="hidden space-y-3 pt-2 border-t border-slate-100">
+            <div class="flex items-center justify-between">
+              <label class="inline-flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
+                <input type="checkbox" id="propImgKeepRatio" checked class="rounded text-blue-600">
+                크기 조절 시 원본 비율 유지
+              </label>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <button class="btn text-xs h-9" id="fitImageToCanvasBtn">캔버스에 꽉 채우기</button>
+              <button class="btn text-xs h-9" id="resetImageRatioBtn">원본 비율 복원</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Layer Stack Panel -->
+      <div class="card">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-base font-bold">레이어 목록</h2>
+          <span class="text-xs text-slate-400 font-medium" id="layerCountBadge">0개</span>
+        </div>
+        <div id="layerListContainer" class="space-y-2 max-h-72 overflow-y-auto pr-1">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Toast Feedback -->
+<div id="toastBox">클립보드에서 이미지를 불러왔습니다.</div>
+
+<script>
+  /**
+   * Local Web Image Editor (Object-based Scene Graph + Crop Studio)
+   * Pure Vanilla JS + HTML5 Canvas 2D API
+   */
+  const canvas = document.getElementById('editorCanvas');
+  const ctx = canvas.getContext('2d');
+  const viewport = document.getElementById('viewport');
+
+  // --- State ---
+  let canvasConfig = {
+    width: 1080,
+    height: 1080,
+    bgColor: '#ffffff',
+    transparent: false
+  };
+
+  let layers = [];
+  let selectedLayerId = null;
+  let layerSeq = 1;
+
+  // History Stack for Undo/Redo
+  let historyStack = [];
+  let historyIndex = -1;
+  const MAX_HISTORY = 30;
+
+  // Interaction State
+  const HANDLE_RADIUS = 7;
+  let activeInteraction = null; // 'move' or handle key ('tl','tr','bl','br','t','b','l','r')
+  let dragStart = { x: 0, y: 0 };
+  let initialBox = null;
+  let snapGuides = { x: false, y: false };
+
+  // Crop Mode State
+  let isCropMode = false;
+  let cropBox = { x: 100, y: 100, width: 500, height: 500 };
+
+  // Checkerboard pattern cache
+  let checkerPattern = null;
+
+  // --- Initialization ---
+  function init() {
+    createCheckerboardPattern();
+    updateCanvasDimensions(1080, 1080, false);
+
+    // Add initial starter layers so the user immediately sees how Blank Canvas + Layers work
+    addShapeLayer({
+      name: '배경 포인트 배지',
+      shapeType: 'rect',
+      x: 140,
+      y: 160,
+      width: 800,
+      height: 760,
+      fillColor: '#eff6ff',
+      strokeColor: '#bfdbfe',
+      strokeWidth: 4,
+      radius: 40,
+      opacity: 1
+    }, false);
+
+    addTextLayer({
+      name: '메인 타이틀 텍스트',
+      text: '나만의 웹 이미지 스튜디오\n자유롭게 편집해 보세요!',
+      x: 190,
+      y: 420,
+      fontSize: 58,
+      fontFamily: 'Pretendard, sans-serif',
+      fontWeight: '800',
+      color: '#1e3a8a',
+      align: 'center',
+      bgEnable: true,
+      bgColor: '#ffffff',
+      bgPad: 28,
+      bgRadius: 20,
+      opacity: 1
+    }, false);
+
+    saveHistory();
+    render();
+    updateUI();
+  }
+
+  function createCheckerboardPattern() {
+    const pCanvas = document.createElement('canvas');
+    pCanvas.width = 24;
+    pCanvas.height = 24;
+    const pCtx = pCanvas.getContext('2d');
+    pCtx.fillStyle = '#f8fafc';
+    pCtx.fillRect(0, 0, 24, 24);
+    pCtx.fillStyle = '#cbd5e1';
+    pCtx.fillRect(0, 0, 12, 12);
+    pCtx.fillRect(12, 12, 12, 12);
+    checkerPattern = ctx.createPattern(pCanvas, 'repeat');
+  }
+
+  function showToast(msg) {
+    const toast = document.getElementById('toastBox');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => toast.classList.remove('show'), 2400);
+  }
+
+  // --- History (Undo / Redo) ---
+  function serializeState() {
+    return {
+      canvasConfig: { ...canvasConfig },
+      layers: layers.map(l => ({ ...l })), // shallow copy keeps ImageBitmap reference intact
+      selectedLayerId
+    };
+  }
+
+  function saveHistory() {
+    if (historyIndex < historyStack.length - 1) {
+      historyStack = historyStack.slice(0, historyIndex + 1);
+    }
+    historyStack.push(serializeState());
+    if (historyStack.length > MAX_HISTORY) {
+      historyStack.shift();
+    } else {
+      historyIndex++;
+    }
+    updateHistoryButtons();
+  }
+
+  function restoreState(state) {
+    canvasConfig = { ...state.canvasConfig };
+    layers = state.layers.map(l => ({ ...l }));
+    selectedLayerId = state.selectedLayerId;
+
+    canvas.width = canvasConfig.width;
+    canvas.height = canvasConfig.height;
+    document.getElementById('canvasWidthInput').value = canvasConfig.width;
+    document.getElementById('canvasHeightInput').value = canvasConfig.height;
+    document.getElementById('bgColorInput').value = canvasConfig.bgColor;
+    document.getElementById('bgTransparentCheck').checked = canvasConfig.transparent;
+
+    render();
+    updateUI();
+    updateHistoryButtons();
+  }
+
+  function updateHistoryButtons() {
+    document.getElementById('undoBtn').disabled = historyIndex <= 0;
+    document.getElementById('redoBtn').disabled = historyIndex >= historyStack.length - 1;
+  }
+
+  document.getElementById('undoBtn').addEventListener('click', () => {
+    if (historyIndex > 0) {
+      historyIndex--;
+      restoreState(historyStack[historyIndex]);
+    }
+  });
+
+  document.getElementById('redoBtn').addEventListener('click', () => {
+    if (historyIndex < historyStack.length - 1) {
+      historyIndex++;
+      restoreState(historyStack[historyIndex]);
+    }
+  });
+
+  // --- Canvas Sizing & Presets ---
+  function updateCanvasDimensions(w, h, recordHistory = true) {
+    canvasConfig.width = Math.max(100, Math.min(4096, Math.round(w)));
+    canvasConfig.height = Math.max(100, Math.min(4096, Math.round(h)));
+    canvas.width = canvasConfig.width;
+    canvas.height = canvasConfig.height;
+
+    document.getElementById('canvasWidthInput').value = canvasConfig.width;
+    document.getElementById('canvasHeightInput').value = canvasConfig.height;
+    document.getElementById('canvasResInfo').textContent = `캔버스: ${canvasConfig.width} × ${canvasConfig.height}px`;
+
+    if (recordHistory) saveHistory();
+    render();
+  }
+
+  document.getElementById('presetSelect').addEventListener('change', (e) => {
+    const val = e.target.value;
+    if (val === 'custom') return;
+    const [w, h] = val.split('x').map(Number);
+    updateCanvasDimensions(w, h);
+  });
+
+  document.getElementById('applySizeBtn').addEventListener('click', () => {
+    const w = parseInt(document.getElementById('canvasWidthInput').value, 10) || 1080;
+    const h = parseInt(document.getElementById('canvasHeightInput').value, 10) || 1080;
+    document.getElementById('presetSelect').value = 'custom';
+    updateCanvasDimensions(w, h);
+    showToast(`캔버스 해상도가 ${w}×${h}px로 변경되었습니다.`);
+  });
+
+  document.getElementById('bgColorInput').addEventListener('input', (e) => {
+    canvasConfig.bgColor = e.target.value;
+    canvasConfig.transparent = false;
+    document.getElementById('bgTransparentCheck').checked = false;
+    render();
+  });
+  document.getElementById('bgColorInput').addEventListener('change', () => saveHistory());
+
+  document.getElementById('bgTransparentCheck').addEventListener('change', (e) => {
+    canvasConfig.transparent = e.target.checked;
+    saveHistory();
+    render();
+  });
+
+  document.getElementById('clearCanvasBtn').addEventListener('click', () => {
+    layers = [];
+    selectedLayerId = null;
+    saveHistory();
+    render();
+    updateUI();
+    showToast('모든 레이어를 초기화했습니다.');
+  });
+
+  // --- Layer Creation Helpers ---
+  function getSelectedLayer() {
+    return layers.find(l => l.id === selectedLayerId) || null;
+  }
+
+  async function addImageFile(file) {
+    if (!file || (!file.type.startsWith('image/') && !/\.(jpe?g|png|webp|gif|bmp|svg|avif)$/i.test(file.name))) {
+      return;
+    }
+    try {
+      const bitmap = await createImageBitmap(file);
+      // Scale image nicely to fit inside 75% of canvas if larger
+      let w = bitmap.width;
+      let h = bitmap.height;
+      const maxW = canvasConfig.width * 0.75;
+      const maxH = canvasConfig.height * 0.75;
+      const aspect = w / h;
+
+      if (w > maxW) {
+        w = maxW;
+        h = w / aspect;
+      }
+      if (h > maxH) {
+        h = maxH;
+        w = h * aspect;
+      }
+
+      const newLayer = {
+        id: 'layer_' + (layerSeq++),
+        type: 'image',
+        name: file.name || `이미지 ${layerSeq - 1}`,
+        visible: true,
+        bitmap: bitmap,
+        naturalWidth: bitmap.width,
+        naturalHeight: bitmap.height,
+        x: Math.round((canvasConfig.width - w) / 2),
+        y: Math.round((canvasConfig.height - h) / 2),
+        width: Math.round(w),
+        height: Math.round(h),
+        keepRatio: true,
+        opacity: 1
+      };
+
+      layers.push(newLayer);
+      selectedLayerId = newLayer.id;
+      saveHistory();
+      render();
+      updateUI();
+      showToast(`'${newLayer.name}' 레이어가 추가되었습니다.`);
+    } catch (err) {
+      showToast('이미지를 불러오지 못했습니다.');
+    }
+  }
+
+  function addTextLayer(custom = {}, recordHistory = true) {
+    const newLayer = {
+      id: 'layer_' + (layerSeq++),
+      type: 'text',
+      name: custom.name || `텍스트 ${layerSeq - 1}`,
+      visible: true,
+      text: custom.text || '텍스트를 입력하세요',
+      x: custom.x ?? Math.round(canvasConfig.width / 2 - 220),
+      y: custom.y ?? Math.round(canvasConfig.height / 2 - 50),
+      width: 440,
+      height: 100,
+      fontSize: custom.fontSize || 56,
+      fontFamily: custom.fontFamily || 'Pretendard, sans-serif',
+      fontWeight: custom.fontWeight || '800',
+      color: custom.color || '#0f172a',
+      align: custom.align || 'center',
+      bgEnable: custom.bgEnable ?? false,
+      bgColor: custom.bgColor || '#fef08a',
+      bgPad: custom.bgPad ?? 18,
+      bgRadius: custom.bgRadius ?? 12,
+      opacity: custom.opacity ?? 1
+    };
+
+    measureTextLayerBounds(newLayer);
+    layers.push(newLayer);
+    selectedLayerId = newLayer.id;
+    if (recordHistory) saveHistory();
+    render();
+    updateUI();
+  }
+
+  function addShapeLayer(custom = {}, recordHistory = true) {
+    const w = custom.width || 320;
+    const h = custom.height || 180;
+    const newLayer = {
+      id: 'layer_' + (layerSeq++),
+      type: 'shape',
+      name: custom.name || `도형 배지 ${layerSeq - 1}`,
+      visible: true,
+      shapeType: custom.shapeType || 'rect',
+      x: custom.x ?? Math.round((canvasConfig.width - w) / 2),
+      y: custom.y ?? Math.round((canvasConfig.height - h) / 2),
+      width: w,
+      height: h,
+      fillColor: custom.fillColor || '#3b82f6',
+      strokeColor: custom.strokeColor || '#1d4ed8',
+      strokeWidth: custom.strokeWidth ?? 0,
+      radius: custom.radius ?? 24,
+      opacity: custom.opacity ?? 1
+    };
+
+    layers.push(newLayer);
+    selectedLayerId = newLayer.id;
+    if (recordHistory) saveHistory();
+    render();
+    updateUI();
+  }
+
+  // Measure multi-line text bounding box accurately
+  function measureTextLayerBounds(layer) {
+    if (layer.type !== 'text') return;
+    ctx.save();
+    ctx.font = `${layer.fontWeight} ${layer.fontSize}px ${layer.fontFamily}`;
+    const lines = (layer.text || ' ').split('\n');
+    const lineHeight = layer.fontSize * 1.28;
+    let maxW = 40;
+    for (const line of lines) {
+      const m = ctx.measureText(line || ' ');
+      if (m.width > maxW) maxW = m.width;
+    }
+    const pad = layer.bgEnable ? (layer.bgPad || 0) : 8;
+    layer.width = Math.round(maxW + pad * 2);
+    layer.height = Math.round(lines.length * lineHeight + pad * 2);
+    ctx.restore();
+  }
+
+  // --- Toolbar Buttons & File / Paste Events ---
+  document.getElementById('addImageBtn').addEventListener('click', () => {
+    const input = document.getElementById('imageLayerInput');
+    input.value = '';
+    input.click();
+  });
+
+  document.getElementById('imageLayerInput').addEventListener('change', (e) => {
+    if (e.target.files) {
+      Array.from(e.target.files).forEach(file => addImageFile(file));
+    }
+  });
+
+  document.getElementById('addTextBtn').addEventListener('click', () => {
+    if (isCropMode) exitCropMode();
+    addTextLayer();
+  });
+
+  document.getElementById('addShapeBtn').addEventListener('click', () => {
+    if (isCropMode) exitCropMode();
+    addShapeLayer();
+  });
+
+  // Drag & Drop onto viewport
+  viewport.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    viewport.classList.add('dragover');
+  });
+  viewport.addEventListener('dragleave', () => viewport.classList.remove('dragover'));
+  viewport.addEventListener('drop', (e) => {
+    e.preventDefault();
+    viewport.classList.remove('dragover');
+    if (e.dataTransfer && e.dataTransfer.files.length > 0) {
+      Array.from(e.dataTransfer.files).forEach(file => addImageFile(file));
+    }
+  });
+
+  // Clipboard Paste (Ctrl+V)
+  window.addEventListener('paste', (e) => {
+    const activeTag = document.activeElement ? document.activeElement.tagName : '';
+    if (activeTag === 'INPUT' || activeTag === 'TEXTAREA') return;
+
+    if (e.clipboardData && e.clipboardData.items) {
+      for (const item of e.clipboardData.items) {
+        if (item.type.startsWith('image/')) {
+          const file = item.getAsFile();
+          addImageFile(file);
+          e.preventDefault();
+          break;
+        }
+      }
+    }
+  });
+
+  // --- Crop Mode Logic ---
+  const toggleCropModeBtn = document.getElementById('toggleCropModeBtn');
+  const cropModeBar = document.getElementById('cropModeBar');
+  const cropAspectSelect = document.getElementById('cropAspectSelect');
+
+  toggleCropModeBtn.addEventListener('click', () => {
+    if (isCropMode) {
+      exitCropMode();
+    } else {
+      enterCropMode();
+    }
+  });
+
+  function enterCropMode() {
+    isCropMode = true;
+    selectedLayerId = null;
+    toggleCropModeBtn.classList.add('btn-active');
+    cropModeBar.classList.remove('hidden');
+
+    const w = Math.round(canvasConfig.width * 0.75);
+    const h = Math.round(canvasConfig.height * 0.75);
+    cropBox = {
+      x: Math.round((canvasConfig.width - w) / 2),
+      y: Math.round((canvasConfig.height - h) / 2),
+      width: w,
+      height: h
+    };
+    applyCropAspectRatio();
+    updateUI();
+    render();
+  }
+
+  function exitCropMode() {
+    isCropMode = false;
+    toggleCropModeBtn.classList.remove('btn-active');
+    cropModeBar.classList.add('hidden');
+    updateUI();
+    render();
+  }
+
+  cropAspectSelect.addEventListener('change', () => {
+    applyCropAspectRatio();
+    render();
+  });
+
+  function applyCropAspectRatio() {
+    const mode = cropAspectSelect.value;
+    if (mode === 'free') return;
+    let ratio = 1;
+    if (mode === '16:9') ratio = 16 / 9;
+    else if (mode === '4:3') ratio = 4 / 3;
+
+    let newH = Math.round(cropBox.width / ratio);
+    if (cropBox.y + newH > canvasConfig.height) {
+      newH = canvasConfig.height - cropBox.y;
+      cropBox.width = Math.round(newH * ratio);
+    }
+    cropBox.height = newH;
+  }
+
+  document.getElementById('cancelCropBtn').addEventListener('click', exitCropMode);
+
+  document.getElementById('applyCropBtn').addEventListener('click', () => {
+    const cx = Math.max(0, Math.round(cropBox.x));
+    const cy = Math.max(0, Math.round(cropBox.y));
+    const cw = Math.max(50, Math.min(canvasConfig.width - cx, Math.round(cropBox.width)));
+    const ch = Math.max(50, Math.min(canvasConfig.height - cy, Math.round(cropBox.height)));
+
+    // Offset all layers relative to the cropped region
+    layers.forEach(l => {
+      l.x -= cx;
+      l.y -= cy;
+    });
+
+    document.getElementById('presetSelect').value = 'custom';
+    isCropMode = false;
+    toggleCropModeBtn.classList.remove('btn-active');
+    cropModeBar.classList.add('hidden');
+
+    updateCanvasDimensions(cw, ch, true);
+    updateUI();
+    showToast(`캔버스가 ${cw}×${ch}px 영역으로 잘렸습니다.`);
+  });
+
+  // --- Core Scene Graph Render Loop ---
+  function render(exportClean = false, targetCtx = ctx) {
+    const W = canvasConfig.width;
+    const H = canvasConfig.height;
+
+    targetCtx.clearRect(0, 0, W, H);
+
+    // 1. Background
+    if (canvasConfig.transparent) {
+      if (!exportClean && checkerPattern) {
+        targetCtx.fillStyle = checkerPattern;
+        targetCtx.fillRect(0, 0, W, H);
+      }
+    } else {
+      targetCtx.fillStyle = canvasConfig.bgColor;
+      targetCtx.fillRect(0, 0, W, H);
+    }
+
+    // 2. Render Layers in Z-Order
+    for (const layer of layers) {
+      if (!layer.visible) continue;
+      targetCtx.save();
+      targetCtx.globalAlpha = layer.opacity ?? 1;
+
+      if (layer.type === 'image' && layer.bitmap) {
+        targetCtx.drawImage(layer.bitmap, layer.x, layer.y, layer.width, layer.height);
+      } else if (layer.type === 'shape') {
+        targetCtx.beginPath();
+        if (layer.shapeType === 'circle') {
+          targetCtx.ellipse(
+            layer.x + layer.width / 2,
+            layer.y + layer.height / 2,
+            layer.width / 2,
+            layer.height / 2,
+            0, 0, Math.PI * 2
+          );
+        } else {
+          const r = Math.min(layer.radius || 0, layer.width / 2, layer.height / 2);
+          if (targetCtx.roundRect) {
+            targetCtx.roundRect(layer.x, layer.y, layer.width, layer.height, r);
+          } else {
+            targetCtx.rect(layer.x, layer.y, layer.width, layer.height);
+          }
+        }
+        targetCtx.fillStyle = layer.fillColor;
+        targetCtx.fill();
+        if (layer.strokeWidth > 0) {
+          targetCtx.lineWidth = layer.strokeWidth;
+          targetCtx.strokeStyle = layer.strokeColor;
+          targetCtx.stroke();
+        }
+      } else if (layer.type === 'text') {
+        measureTextLayerBounds(layer);
+        const pad = layer.bgEnable ? (layer.bgPad || 0) : 8;
+
+        if (layer.bgEnable) {
+          targetCtx.beginPath();
+          const r = Math.min(layer.bgRadius || 0, layer.width / 2, layer.height / 2);
+          if (targetCtx.roundRect) {
+            targetCtx.roundRect(layer.x, layer.y, layer.width, layer.height, r);
+          } else {
+            targetCtx.rect(layer.x, layer.y, layer.width, layer.height);
+          }
+          targetCtx.fillStyle = layer.bgColor;
+          targetCtx.fill();
+        }
+
+        targetCtx.font = `${layer.fontWeight} ${layer.fontSize}px ${layer.fontFamily}`;
+        targetCtx.fillStyle = layer.color;
+        targetCtx.textBaseline = 'top';
+        targetCtx.textAlign = layer.align || 'left';
+
+        const lines = (layer.text || '').split('\n');
+        const lineHeight = layer.fontSize * 1.28;
+
+        let textX = layer.x + pad;
+        if (layer.align === 'center') textX = layer.x + layer.width / 2;
+        else if (layer.align === 'right') textX = layer.x + layer.width - pad;
+
+        lines.forEach((line, i) => {
+          targetCtx.fillText(line, textX, layer.y + pad + i * lineHeight);
+        });
+      }
+
+      targetCtx.restore();
+    }
+
+    if (exportClean) return;
+
+    // 3. Smart Center Alignment Snapping Guides
+    const scale = getCanvasDisplayScale();
+    if (snapGuides.x || snapGuides.y) {
+      targetCtx.save();
+      targetCtx.strokeStyle = '#f43f5e';
+      targetCtx.lineWidth = Math.max(1.5, 1.5 * scale);
+      targetCtx.setLineDash([6 * scale, 6 * scale]);
+      targetCtx.beginPath();
+      if (snapGuides.x) {
+        targetCtx.moveTo(W / 2, 0);
+        targetCtx.lineTo(W / 2, H);
+      }
+      if (snapGuides.y) {
+        targetCtx.moveTo(0, H / 2);
+        targetCtx.lineTo(W, H / 2);
+      }
+      targetCtx.stroke();
+      targetCtx.restore();
+    }
+
+    // 4. Selection Bounding Box & 8 Handles OR Crop Mode Overlay
+    if (isCropMode) {
+      drawCropOverlay(targetCtx, scale);
+    } else {
+      const sel = getSelectedLayer();
+      if (sel && sel.visible) {
+        drawSelectionHandles(targetCtx, sel, scale);
+      }
+    }
+  }
+
+  function getCanvasDisplayScale() {
+    const rect = canvas.getBoundingClientRect();
+    return rect.width > 0 ? canvas.width / rect.width : 1;
+  }
+
+  function getHandlesForBox(box, isText = false) {
+    const { x, y, width: w, height: h } = box;
+    if (isText) {
+      // Text uses 4 corner handles to scale fontSize proportionally
+      return {
+        tl: { x: x, y: y },
+        tr: { x: x + w, y: y },
+        bl: { x: x, y: y + h },
+        br: { x: x + w, y: y + h }
+      };
+    }
+    return {
+      tl: { x: x, y: y },
+      tr: { x: x + w, y: y },
+      bl: { x: x, y: y + h },
+      br: { x: x + w, y: y + h },
+      t:  { x: x + w / 2, y: y },
+      b:  { x: x + w / 2, y: y + h },
+      l:  { x: x, y: y + h / 2 },
+      r:  { x: x + w, y: y + h / 2 }
+    };
+  }
+
+  function drawSelectionHandles(targetCtx, layer, scale) {
+    targetCtx.save();
+    targetCtx.strokeStyle = '#2563eb';
+    targetCtx.lineWidth = Math.max(2, 2 * scale);
+    targetCtx.strokeRect(layer.x, layer.y, layer.width, layer.height);
+
+    const handles = getHandlesForBox(layer, layer.type === 'text');
+    const r = HANDLE_RADIUS * scale;
+
+    targetCtx.fillStyle = '#ffffff';
+    targetCtx.strokeStyle = '#2563eb';
+    targetCtx.lineWidth = Math.max(2, 2 * scale);
+
+    for (const key in handles) {
+      const h = handles[key];
+      targetCtx.beginPath();
+      targetCtx.arc(h.x, h.y, r, 0, Math.PI * 2);
+      targetCtx.fill();
+      targetCtx.stroke();
+    }
+    targetCtx.restore();
+  }
+
+  function drawCropOverlay(targetCtx, scale) {
+    const W = canvasConfig.width;
+    const H = canvasConfig.height;
+
+    targetCtx.save();
+    // Darken outside cropBox using 4 rectangles
+    targetCtx.fillStyle = 'rgba(15, 23, 42, 0.62)';
+    targetCtx.fillRect(0, 0, W, cropBox.y); // top
+    targetCtx.fillRect(0, cropBox.y + cropBox.height, W, H - (cropBox.y + cropBox.height)); // bottom
+    targetCtx.fillRect(0, cropBox.y, cropBox.x, cropBox.height); // left
+    targetCtx.fillRect(cropBox.x + cropBox.width, cropBox.y, W - (cropBox.x + cropBox.width), cropBox.height); // right
+
+    // Crop Border
+    targetCtx.strokeStyle = '#38bdf8';
+    targetCtx.lineWidth = Math.max(2, 2 * scale);
+    targetCtx.strokeRect(cropBox.x, cropBox.y, cropBox.width, cropBox.height);
+
+    // Rule of thirds grid
+    targetCtx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+    targetCtx.lineWidth = Math.max(1, 1 * scale);
+    targetCtx.beginPath();
+    targetCtx.moveTo(cropBox.x + cropBox.width / 3, cropBox.y);
+    targetCtx.lineTo(cropBox.x + cropBox.width / 3, cropBox.y + cropBox.height);
+    targetCtx.moveTo(cropBox.x + (cropBox.width * 2) / 3, cropBox.y);
+    targetCtx.lineTo(cropBox.x + (cropBox.width * 2) / 3, cropBox.y + cropBox.height);
+    targetCtx.moveTo(cropBox.x, cropBox.y + cropBox.height / 3);
+    targetCtx.lineTo(cropBox.x + cropBox.width, cropBox.y + cropBox.height / 3);
+    targetCtx.moveTo(cropBox.x, cropBox.y + (cropBox.height * 2) / 3);
+    targetCtx.lineTo(cropBox.x + cropBox.width, cropBox.y + (cropBox.height * 2) / 3);
+    targetCtx.stroke();
+
+    // 8 Handles
+    const handles = getHandlesForBox(cropBox, false);
+    const r = HANDLE_RADIUS * scale;
+    targetCtx.fillStyle = '#ffffff';
+    targetCtx.strokeStyle = '#0284c7';
+    targetCtx.lineWidth = Math.max(2, 2 * scale);
+
+    for (const key in handles) {
+      const h = handles[key];
+      targetCtx.beginPath();
+      targetCtx.arc(h.x, h.y, r, 0, Math.PI * 2);
+      targetCtx.fill();
+      targetCtx.stroke();
+    }
+    targetCtx.restore();
+  }
+
+  // --- Mouse & Touch Canvas Interactions ---
+  function getPointerPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+      x: (clientX - rect.left) * (canvas.width / rect.width),
+      y: (clientY - rect.top) * (canvas.height / rect.height)
+    };
+  }
+
+  function hitTestBox(pos, box, isText = false) {
+    const scale = getCanvasDisplayScale();
+    const hitRadius = (HANDLE_RADIUS + 5) * scale;
+    const handles = getHandlesForBox(box, isText);
+
+    for (const key in handles) {
+      const h = handles[key];
+      if (Math.hypot(pos.x - h.x, pos.y - h.y) <= hitRadius) {
+        return key;
+      }
+    }
+    if (
+      pos.x >= box.x && pos.x <= box.x + box.width &&
+      pos.y >= box.y && pos.y <= box.y + box.height
+    ) {
+      return 'move';
+    }
+    return null;
+  }
+
+  function onPointerDown(e) {
+    const pos = getPointerPos(e);
+
+    if (isCropMode) {
+      const hit = hitTestBox(pos, cropBox, false);
+      if (hit) {
+        activeInteraction = hit;
+        dragStart = pos;
+        initialBox = { ...cropBox };
+      }
+      return;
+    }
+
+    // 1. Check handles of currently selected layer first
+    const currentSel = getSelectedLayer();
+    if (currentSel && currentSel.visible) {
+      const hit = hitTestBox(pos, currentSel, currentSel.type === 'text');
+      if (hit) {
+        activeInteraction = hit;
+        dragStart = pos;
+        initialBox = { ...currentSel };
+        return;
+      }
+    }
+
+    // 2. Check top-most layer under pointer
+    let foundLayer = null;
+    for (let i = layers.length - 1; i >= 0; i--) {
+      const l = layers[i];
+      if (!l.visible) continue;
+      if (
+        pos.x >= l.x && pos.x <= l.x + l.width &&
+        pos.y >= l.y && pos.y <= l.y + l.height
+      ) {
+        foundLayer = l;
+        break;
+      }
+    }
+
+    if (foundLayer) {
+      selectedLayerId = foundLayer.id;
+      activeInteraction = 'move';
+      dragStart = pos;
+      initialBox = { ...foundLayer };
+    } else {
+      selectedLayerId = null;
+      activeInteraction = null;
+    }
+
+    updateUI();
+    render();
+  }
+
+  function onPointerMove(e) {
+    const pos = getPointerPos(e);
+
+    if (!activeInteraction) {
+      // Update cursor style
+      let hit = null;
+      if (isCropMode) {
+        hit = hitTestBox(pos, cropBox, false);
+      } else {
+        const sel = getSelectedLayer();
+        if (sel && sel.visible) {
+          hit = hitTestBox(pos, sel, sel.type === 'text');
+        }
+      }
+      if (hit === 'move') canvas.style.cursor = 'move';
+      else if (['tl', 'br'].includes(hit)) canvas.style.cursor = 'nwse-resize';
+      else if (['tr', 'bl'].includes(hit)) canvas.style.cursor = 'nesw-resize';
+      else if (['t', 'b'].includes(hit)) canvas.style.cursor = 'ns-resize';
+      else if (['l', 'r'].includes(hit)) canvas.style.cursor = 'ew-resize';
+      else canvas.style.cursor = 'default';
+      return;
+    }
+
+    if (e.cancelable) e.preventDefault();
+    const dx = pos.x - dragStart.x;
+    const dy = pos.y - dragStart.y;
+
+    if (isCropMode) {
+      handleCropDrag(activeInteraction, dx, dy);
+      render();
+      updateCoordInfo(cropBox);
+      return;
+    }
+
+    const sel = getSelectedLayer();
+    if (!sel) return;
+
+    snapGuides = { x: false, y: false };
+
+    if (activeInteraction === 'move') {
+      let nextX = Math.round(initialBox.x + dx);
+      let nextY = Math.round(initialBox.y + dy);
+
+      // Center snapping within 10px threshold
+      const centerX = nextX + sel.width / 2;
+      const centerY = nextY + sel.height / 2;
+      if (Math.abs(centerX - canvasConfig.width / 2) < 12) {
+        nextX = Math.round(canvasConfig.width / 2 - sel.width / 2);
+        snapGuides.x = true;
+      }
+      if (Math.abs(centerY - canvasConfig.height / 2) < 12) {
+        nextY = Math.round(canvasConfig.height / 2 - sel.height / 2);
+        snapGuides.y = true;
+      }
+
+      sel.x = nextX;
+      sel.y = nextY;
+    } else {
+      handleLayerResize(sel, activeInteraction, dx, dy);
+    }
+
+    render();
+    updateCoordInfo(sel);
+  }
+
+  function onPointerUp() {
+    if (activeInteraction) {
+      activeInteraction = null;
+      snapGuides = { x: false, y: false };
+      if (!isCropMode) saveHistory();
+      render();
+      updateUI();
+    }
+  }
+
+  canvas.addEventListener('mousedown', onPointerDown);
+  window.addEventListener('mousemove', onPointerMove);
+  window.addEventListener('mouseup', onPointerUp);
+
+  canvas.addEventListener('touchstart', onPointerDown, { passive: false });
+  window.addEventListener('touchmove', onPointerMove, { passive: false });
+  window.addEventListener('touchend', onPointerUp);
+
+  function handleLayerResize(layer, handle, dx, dy) {
+    const minSize = 24;
+
+    if (layer.type === 'text') {
+      // Scale fontSize cleanly when dragging corner handle
+      const delta = (handle === 'br' || handle === 'tr') ? dx : -dx;
+      const scaleFactor = Math.max(0.25, (initialBox.width + delta) / initialBox.width);
+      layer.fontSize = Math.max(12, Math.min(360, Math.round(initialBox.fontSize * scaleFactor)));
+      measureTextLayerBounds(layer);
+      document.getElementById('propFontSize').value = layer.fontSize;
+      return;
+    }
+
+    let { x, y, width, height } = initialBox;
+    const ratio = width / height;
+
+    if (handle.includes('r')) width = Math.max(minSize, width + dx);
+    if (handle.includes('b')) height = Math.max(minSize, height + dy);
+    if (handle.includes('l')) {
+      const nw = Math.max(minSize, width - dx);
+      x += width - nw;
+      width = nw;
+    }
+    if (handle.includes('t')) {
+      const nh = Math.max(minSize, height - dy);
+      y += height - nh;
+      height = nh;
+    }
+
+    if (layer.type === 'image' && layer.keepRatio) {
+      if (['l', 'r'].includes(handle)) {
+        height = width / ratio;
+      } else {
+        width = height * ratio;
+      }
+    }
+
+    layer.x = Math.round(x);
+    layer.y = Math.round(y);
+    layer.width = Math.round(width);
+    layer.height = Math.round(height);
+  }
+
+  function handleCropDrag(handle, dx, dy) {
+    let { x, y, width, height } = initialBox;
+    const minSize = 40;
+    const W = canvasConfig.width;
+    const H = canvasConfig.height;
+
+    if (handle === 'move') {
+      cropBox.x = Math.max(0, Math.min(W - width, Math.round(x + dx)));
+      cropBox.y = Math.max(0, Math.min(H - height, Math.round(y + dy)));
+      return;
+    }
+
+    const mode = cropAspectSelect.value;
+    let ratio = null;
+    if (mode === '1:1') ratio = 1;
+    else if (mode === '16:9') ratio = 16 / 9;
+    else if (mode === '4:3') ratio = 4 / 3;
+
+    if (handle.includes('r')) width = Math.max(minSize, Math.min(W - x, width + dx));
+    if (handle.includes('b')) height = Math.max(minSize, Math.min(H - y, height + dy));
+    if (handle.includes('l')) {
+      const nw = Math.max(minSize, width - dx);
+      const nx = x + (width - nw);
+      if (nx >= 0) { x = nx; width = nw; }
+    }
+    if (handle.includes('t')) {
+      const nh = Math.max(minSize, height - dy);
+      const ny = y + (height - nh);
+      if (ny >= 0) { y = ny; height = nh; }
+    }
+
+    if (ratio) {
+      if (['l', 'r'].includes(handle)) height = width / ratio;
+      else width = height * ratio;
+      if (x + width > W) width = W - x;
+      if (y + height > H) height = H - y;
+    }
+
+    cropBox = {
+      x: Math.round(x),
+      y: Math.round(y),
+      width: Math.round(width),
+      height: Math.round(height)
+    };
+  }
+
+  // --- Keyboard Shortcuts ---
+  window.addEventListener('keydown', (e) => {
+    const activeTag = document.activeElement ? document.activeElement.tagName : '';
+    if (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') return;
+
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+      e.preventDefault();
+      document.getElementById('undoBtn').click();
+      return;
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+      e.preventDefault();
+      document.getElementById('redoBtn').click();
+      return;
+    }
+
+    const sel = getSelectedLayer();
+    if (!sel || isCropMode) return;
+
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+      e.preventDefault();
+      deleteSelectedLayer();
+    } else if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+      e.preventDefault();
+      const step = e.shiftKey ? 10 : 2;
+      if (e.key === 'ArrowUp') sel.y -= step;
+      if (e.key === 'ArrowDown') sel.y += step;
+      if (e.key === 'ArrowLeft') sel.x -= step;
+      if (e.key === 'ArrowRight') sel.x += step;
+      render();
+      updateCoordInfo(sel);
+    }
+  });
+
+  // --- Inspector & Layer List UI Binding ---
+  function updateCoordInfo(box) {
+    const el = document.getElementById('selectedCoordInfo');
+    if (!box) {
+      el.textContent = '선택된 요소: 없음';
+      return;
+    }
+    el.textContent = `위치: (${Math.round(box.x)}, ${Math.round(box.y)}) | 크기: ${Math.round(box.width)} × ${Math.round(box.height)}px`;
+  }
+
+  function updateUI() {
+    renderLayerList();
+
+    const sel = getSelectedLayer();
+    const emptyEl = document.getElementById('inspectorEmpty');
+    const contentEl = document.getElementById('inspectorContent');
+    const badgeEl = document.getElementById('inspectorBadge');
+
+    const textGroup = document.getElementById('textPropsGroup');
+    const shapeGroup = document.getElementById('shapePropsGroup');
+    const imageGroup = document.getElementById('imagePropsGroup');
+
+    if (!sel || isCropMode) {
+      emptyEl.classList.remove('hidden');
+      contentEl.classList.add('hidden');
+      badgeEl.textContent = isCropMode ? '자르기 모드' : '미선택';
+      updateCoordInfo(isCropMode ? cropBox : null);
+      return;
+    }
+
+    emptyEl.classList.add('hidden');
+    contentEl.classList.remove('hidden');
+    updateCoordInfo(sel);
+
+    const pct = Math.round((sel.opacity ?? 1) * 100);
+    document.getElementById('propOpacity').value = pct;
+    document.getElementById('propOpacityVal').textContent = `${pct}%`;
+
+    textGroup.classList.add('hidden');
+    shapeGroup.classList.add('hidden');
+    imageGroup.classList.add('hidden');
+
+    if (sel.type === 'text') {
+      badgeEl.textContent = '텍스트 레이어';
+      textGroup.classList.remove('hidden');
+      document.getElementById('propTextContent').value = sel.text;
+      document.getElementById('propFontFamily').value = sel.fontFamily;
+      document.getElementById('propFontSize').value = sel.fontSize;
+      document.getElementById('propTextColor').value = sel.color;
+      document.getElementById('propFontWeight').value = sel.fontWeight;
+      document.getElementById('propTextAlign').value = sel.align;
+      document.getElementById('propTextBgEnable').checked = sel.bgEnable;
+      document.getElementById('propTextBgColor').value = sel.bgColor;
+      document.getElementById('propTextBgPad').value = sel.bgPad;
+      document.getElementById('propTextBgRadius').value = sel.bgRadius;
+    } else if (sel.type === 'shape') {
+      badgeEl.textContent = '도형 레이어';
+      shapeGroup.classList.remove('hidden');
+      document.getElementById('propShapeType').value = sel.shapeType;
+      document.getElementById('propShapeRadius').value = sel.radius;
+      document.getElementById('propShapeFill').value = sel.fillColor;
+      document.getElementById('propShapeStroke').value = sel.strokeColor;
+      document.getElementById('propShapeStrokeWidth').value = sel.strokeWidth;
+    } else if (sel.type === 'image') {
+      badgeEl.textContent = '이미지 레이어';
+      imageGroup.classList.remove('hidden');
+      document.getElementById('propImgKeepRatio').checked = sel.keepRatio;
+    }
+  }
+
+  function renderLayerList() {
+    const container = document.getElementById('layerListContainer');
+    document.getElementById('layerCountBadge').textContent = `${layers.length}개`;
+    container.innerHTML = '';
+
+    if (layers.length === 0) {
+      container.innerHTML = `<div class="py-6 text-center text-xs text-slate-400">레이어가 없습니다.</div>`;
+      return;
+    }
+
+    // Show top-most layer first
+    [...layers].reverse().forEach((layer) => {
+      const item = document.createElement('div');
+      item.className = `layer-item ${layer.id === selectedLayerId ? 'active' : ''}`;
+
+      const iconMap = {
+        image: '🖼️',
+        text: '🔤',
+        shape: '🔷'
+      };
+
+      const labelText = layer.type === 'text'
+        ? (layer.text.replace(/\n/g, ' ').slice(0, 18) || '텍스트')
+        : layer.name;
+
+      item.innerHTML = `
+        <div class="flex items-center gap-2 overflow-hidden">
+          <span>${iconMap[layer.type] || '📄'}</span>
+          <span class="truncate font-medium ${!layer.visible ? 'line-through text-slate-400' : ''}">${labelText}</span>
+        </div>
+        <div class="flex items-center gap-1 shrink-0">
+          <button class="p-1 text-slate-400 hover:text-slate-700" data-action="toggle-vis" title="표시/숨기기">
+            ${layer.visible ? '👁️' : '🚫'}
+          </button>
+        </div>
+      `;
+
+      item.addEventListener('click', (e) => {
+        if (e.target.closest('[data-action="toggle-vis"]')) {
+          layer.visible = !layer.visible;
+          saveHistory();
+          render();
+          updateUI();
+          return;
+        }
+        if (isCropMode) exitCropMode();
+        selectedLayerId = layer.id;
+        render();
+        updateUI();
+      });
+
+      container.appendChild(item);
+    });
+  }
+
+  // --- Inspector Input Listeners ---
+  document.getElementById('propOpacity').addEventListener('input', (e) => {
+    const sel = getSelectedLayer();
+    if (!sel) return;
+    sel.opacity = parseInt(e.target.value, 10) / 100;
+    document.getElementById('propOpacityVal').textContent = `${e.target.value}%`;
+    render();
+  });
+  document.getElementById('propOpacity').addEventListener('change', () => saveHistory());
+
+  // Quick Alignment & Z-Order Actions
+  document.getElementById('alignCenterHBtn').addEventListener('click', () => {
+    const sel = getSelectedLayer();
+    if (!sel) return;
+    sel.x = Math.round((canvasConfig.width - sel.width) / 2);
+    saveHistory();
+    render();
+    updateCoordInfo(sel);
+  });
+
+  document.getElementById('alignCenterVBtn').addEventListener('click', () => {
+    const sel = getSelectedLayer();
+    if (!sel) return;
+    sel.y = Math.round((canvasConfig.height - sel.height) / 2);
+    saveHistory();
+    render();
+    updateCoordInfo(sel);
+  });
+
+  document.getElementById('layerUpBtn').addEventListener('click', () => {
+    const idx = layers.findIndex(l => l.id === selectedLayerId);
+    if (idx > -1 && idx < layers.length - 1) {
+      const temp = layers[idx];
+      layers[idx] = layers[idx + 1];
+      layers[idx + 1] = temp;
+      saveHistory();
+      render();
+      updateUI();
+    }
+  });
+
+  document.getElementById('layerDownBtn').addEventListener('click', () => {
+    const idx = layers.findIndex(l => l.id === selectedLayerId);
+    if (idx > 0) {
+      const temp = layers[idx];
+      layers[idx] = layers[idx - 1];
+      layers[idx - 1] = temp;
+      saveHistory();
+      render();
+      updateUI();
+    }
+  });
+
+  document.getElementById('duplicateLayerBtn').addEventListener('click', () => {
+    const sel = getSelectedLayer();
+    if (!sel) return;
+    const copy = {
+      ...sel,
+      id: 'layer_' + (layerSeq++),
+      name: sel.name + ' (복사본)',
+      x: sel.x + 30,
+      y: sel.y + 30
+    };
+    layers.push(copy);
+    selectedLayerId = copy.id;
+    saveHistory();
+    render();
+    updateUI();
+  });
+
+  function deleteSelectedLayer() {
+    if (!selectedLayerId) return;
+    layers = layers.filter(l => l.id !== selectedLayerId);
+    selectedLayerId = layers.length > 0 ? layers[layers.length - 1].id : null;
+    saveHistory();
+    render();
+    updateUI();
+  }
+
+  document.getElementById('deleteLayerBtn').addEventListener('click', deleteSelectedLayer);
+
+  // Text Controls Binding
+  const bindTextProp = (id, prop, isNum = false, isCheck = false) => {
+    const el = document.getElementById(id);
+    el.addEventListener('input', () => {
+      const sel = getSelectedLayer();
+      if (!sel || sel.type !== 'text') return;
+      sel[prop] = isCheck ? el.checked : (isNum ? (parseInt(el.value, 10) || 0) : el.value);
+      measureTextLayerBounds(sel);
+      render();
+      renderLayerList();
+    });
+    el.addEventListener('change', () => saveHistory());
+  };
+
+  bindTextProp('propTextContent', 'text');
+  bindTextProp('propFontFamily', 'fontFamily');
+  bindTextProp('propFontSize', 'fontSize', true);
+  bindTextProp('propTextColor', 'color');
+  bindTextProp('propFontWeight', 'fontWeight');
+  bindTextProp('propTextAlign', 'align');
+  bindTextProp('propTextBgEnable', 'bgEnable', false, true);
+  bindTextProp('propTextBgColor', 'bgColor');
+  bindTextProp('propTextBgPad', 'bgPad', true);
+  bindTextProp('propTextBgRadius', 'bgRadius', true);
+
+  // Shape Controls Binding
+  const bindShapeProp = (id, prop, isNum = false) => {
+    const el = document.getElementById(id);
+    el.addEventListener('input', () => {
+      const sel = getSelectedLayer();
+      if (!sel || sel.type !== 'shape') return;
+      sel[prop] = isNum ? (parseInt(el.value, 10) || 0) : el.value;
+      render();
+    });
+    el.addEventListener('change', () => saveHistory());
+  };
+
+  bindShapeProp('propShapeType', 'shapeType');
+  bindShapeProp('propShapeRadius', 'radius', true);
+  bindShapeProp('propShapeFill', 'fillColor');
+  bindShapeProp('propShapeStroke', 'strokeColor');
+  bindShapeProp('propShapeStrokeWidth', 'strokeWidth', true);
+
+  // Image Controls Binding
+  document.getElementById('propImgKeepRatio').addEventListener('change', (e) => {
+    const sel = getSelectedLayer();
+    if (sel && sel.type === 'image') {
+      sel.keepRatio = e.target.checked;
+      saveHistory();
+    }
+  });
+
+  document.getElementById('fitImageToCanvasBtn').addEventListener('click', () => {
+    const sel = getSelectedLayer();
+    if (!sel || sel.type !== 'image') return;
+    sel.x = 0;
+    sel.y = 0;
+    sel.width = canvasConfig.width;
+    sel.height = canvasConfig.height;
+    saveHistory();
+    render();
+    updateCoordInfo(sel);
+  });
+
+  document.getElementById('resetImageRatioBtn').addEventListener('click', () => {
+    const sel = getSelectedLayer();
+    if (!sel || sel.type !== 'image') return;
+    const aspect = sel.naturalWidth / sel.naturalHeight;
+    sel.height = Math.round(sel.width / aspect);
+    saveHistory();
+    render();
+    updateCoordInfo(sel);
+  });
+
+  // --- High-Resolution Export ---
+  const exportFormat = document.getElementById('exportFormat');
+  const exportQuality = document.getElementById('exportQuality');
+  const exportQualityVal = document.getElementById('exportQualityVal');
+  const exportQualityGroup = document.getElementById('exportQualityGroup');
+
+  exportFormat.addEventListener('change', () => {
+    const isPng = exportFormat.value === 'image/png';
+    exportQuality.disabled = isPng;
+    exportQualityGroup.style.opacity = isPng ? '0.4' : '1';
+  });
+
+  exportQuality.addEventListener('input', () => {
+    exportQualityVal.textContent = `${exportQuality.value}%`;
+  });
+
+  document.getElementById('exportBtn').addEventListener('click', () => {
+    const exportCanvas = document.createElement('canvas');
+    exportCanvas.width = canvasConfig.width;
+    exportCanvas.height = canvasConfig.height;
+    const expCtx = exportCanvas.getContext('2d');
+
+    const format = exportFormat.value;
+    const quality = parseInt(exportQuality.value, 10) / 100;
+
+    // If JPG is selected on a transparent canvas, fill white first
+    if (format === 'image/jpeg' && canvasConfig.transparent) {
+      expCtx.fillStyle = '#ffffff';
+      expCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+    }
+
+    // Render clean scene without handles or checkerboard
+    render(true, expCtx);
+
+    exportCanvas.toBlob((blob) => {
+      if (!blob) return;
+      const ext = format === 'image/jpeg' ? 'jpg' : format.split('/')[1];
+      const fileName = `edited_${canvasConfig.width}x${canvasConfig.height}.${ext}`;
+      const url = URL.createObjectURL(blob);
+
+      document.getElementById('exportFileName').textContent = fileName;
+      document.getElementById('exportFileMeta').textContent =
+        `해상도: ${canvasConfig.width} × ${canvasConfig.height}px | 파일 크기: ${formatBytes(blob.size)}`;
+
+      const link = document.getElementById('downloadLink');
+      link.href = url;
+      link.download = fileName;
+
+      document.getElementById('exportResultBox').classList.remove('hidden');
+      link.click();
+      showToast('완성된 이미지가 다운로드되었습니다.');
+    }, format, quality);
+  });
+
+  function formatBytes(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  }
+
+  window.onload = init;
+</script>
+</body>
+</html>
