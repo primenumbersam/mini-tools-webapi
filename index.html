@@ -268,12 +268,41 @@
       max-width: 34ch;
     }
 
+    @media (max-width: 640px) {
+      .editorial-content {
+        max-width: 190px;
+        padding: 0 4px;
+      }
+
+      .monograph-label {
+        font-size: 9px;
+        letter-spacing: 0.16em;
+        margin-bottom: 4px;
+      }
+
+      .headline-title {
+        font-size: clamp(1.15rem, 5vw, 1.5rem);
+        line-height: 1.12;
+      }
+
+      .headline-divider {
+        margin: 6px 0;
+        width: 32px;
+      }
+
+      .headline-desc {
+        font-size: 10.5px;
+        line-height: 1.35;
+        max-width: 20ch;
+      }
+    }
+
     /* Bilateral Curtain Card Deck */
     .curtain-deck {
       position: absolute;
       inset: 0;
       z-index: 10;
-      pointer-events: auto;
+      pointer-events: none;
     }
 
     .curtain-card {
@@ -290,6 +319,7 @@
       outline: 1px solid var(--ring);
       transition: outline 0.2s ease, box-shadow 0.2s ease;
       transform-origin: center center;
+      pointer-events: auto;
     }
 
     .curtain-card:hover {
@@ -342,7 +372,8 @@
 
     /* Bottom Status Pill */
     .status-pill {
-      pointer-events: none;
+      pointer-events: auto;
+      cursor: pointer;
       position: absolute;
       bottom: 16px;
       z-index: 30;
@@ -359,18 +390,26 @@
       color: var(--text-muted);
       letter-spacing: 0.02em;
       backdrop-filter: blur(8px);
+      transition: all 0.2s ease;
+    }
+
+    .status-pill:hover {
+      background: var(--bg-surface);
+      border-color: var(--text-muted);
+      color: var(--text-main);
     }
 
     .status-dot {
       width: 6px;
       height: 6px;
       border-radius: 50%;
-      background: #f59e0b;
+      background: #fff53b;
       transition: background-color 0.3s ease;
+      flex-shrink: 0;
     }
 
     .status-dot.active {
-      background: #10b981;
+      background: #888888;
     }
 
     /* Catalog Section */
@@ -618,7 +657,7 @@
     <header class="nav-bar">
       <a href="index.html" class="brand-mark">
         <div class="brand-badge">∑</div>
-        <div class="brand-title">Mini Browser Web API Tools</div>
+        <div class="brand-title">Mini Browser Apps</div>
       </a>
 
       <div class="nav-actions">
@@ -635,7 +674,6 @@
           <svg id="themeIcon" viewBox="0 0 24 24">
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
           </svg>
-          <span id="themeLabel">다크</span>
         </button>
       </div>
     </header>
@@ -648,14 +686,14 @@
 
         <!-- Center Editorial Text -->
         <div class="editorial-content" id="editorialContent">
-          <span class="monograph-label">Single File Apps</span>
+          <span class="monograph-label">Zero Build</span>
           <h2 class="headline-title">
-            Zero Build.<br>
-            Client-Side.
+            Single-File.<br>
+            Web-Apps.
           </h2>
           <div class="headline-divider" id="headlineDivider"></div>
           <p class="headline-desc">
-            서버 전송 없이 브라우저 내장 Web API로만 구동되는 초경량 단일 파일 웹 도구 모음.
+            Browser Native Web API.
           </p>
         </div>
 
@@ -663,9 +701,9 @@
         <div class="curtain-deck" id="curtainDeck"></div>
 
         <!-- Status Pill Indicator -->
-        <div class="status-pill" id="statusPill">
+        <div class="status-pill" id="statusPill" title="클릭하여 커튼 열기/닫기">
           <span class="status-dot" id="statusDot"></span>
-          <span id="statusText">스크롤하거나 클릭하여 도구 펼치기</span>
+          <span id="statusText">Click to Open</span>
         </div>
       </div>
     </section>
@@ -674,7 +712,7 @@
     <section class="catalog-section" id="catalogSection">
       <div class="catalog-header">
         <div class="catalog-heading">
-          <span>도구 카탈로그</span>
+          <span>웹 도구 목록</span>
           <span class="catalog-count" id="toolCountLabel">8 Tools</span>
         </div>
 
@@ -708,28 +746,28 @@
         category: "image",
         catName: "Image",
         image: "assets/image-converter.jpg",
-        desc: "PNG, JPEG, WebP 등 브라우저 지원 포맷 상호 변환 및 비율 유지 일괄 리사이징/압축.",
-        tech: ["HTMLCanvasElement", "toBlob", "FileReader"]
+        desc: "Batch Resize & Convert to PNG, JPEG, WebP",
+        tech: ["HTMLCanvasElement", "toBlob"]
       },
       {
         id: "image-cropper",
-        title: "이미지 자르기 도구",
+        title: "이미지 자르기",
         file: "image-cropper.html",
         category: "image",
         catName: "Image",
         image: "assets/image-cropper.jpg",
-        desc: "인터랙티브 크롭 박스 및 고정 종횡비(1:1, 4:3, 16:9) 지정을 통한 무손실 정밀 영역 슬라이싱.",
-        tech: ["2D Canvas", "OffscreenCanvas", "drawImage"]
+        desc: "Preset Aspect Ratios & Cropping",
+        tech: ["2D Canvas", "drawImage"]
       },
       {
         id: "image-editor",
-        title: "웹 이미지 에디터",
+        title: "이미지 편집기",
         file: "image-editor.html",
         category: "image",
         catName: "Image",
         image: "assets/image-editor.jpg",
-        desc: "필터 효과, 각도 회전, 대칭 반전 및 색상 보정을 지원하는 순수 캔버스 기반 로컬 에디터.",
-        tech: ["Canvas API", "CSS Filters", "ImageBitmap"]
+        desc: "Mini Local Image Editor",
+        tech: ["Canvas API", "ImageBitmap"]
       },
       {
         id: "pdf-merger",
@@ -738,8 +776,8 @@
         category: "utility",
         catName: "Document",
         image: "assets/pdf-merger.jpg",
-        desc: "여러 PDF 문서를 드래그 앤 드롭으로 재정렬하고 로컬에서 단일 PDF 파일로 결합.",
-        tech: ["File API", "Client Merge", "Blob URL"]
+        desc: "Drag & Drop, and Merge PDFs",
+        tech: ["File API", "Blob URL"]
       },
       {
         id: "text-diagram-tree",
@@ -748,38 +786,38 @@
         category: "text",
         catName: "Diagram",
         image: "assets/text-diagram-tree.jpg",
-        desc: "들여쓰기 텍스트 목록을 터미널 및 마크다운에 적합한 계층적 ASCII/UTF-8 트리 다이어그램으로 실시간 변환.",
-        tech: ["Tree Parser", "Visual Width", "Clipboard"]
+        desc: "텍스트 목록을 계층적 트리 다이어그램으로.",
+        tech: ["Tree Parser", "Visual Width"]
       },
       {
         id: "text-editor",
-        title: "웹 텍스트 에디터",
+        title: "텍스트 편집기",
         file: "text-editor.html",
         category: "text",
         catName: "Text / Code",
         image: "assets/text-editor.jpg",
-        desc: "다중 탭, File System Access API 직접 덮어쓰기 저장, UTF-8/EUC-KR 재인코딩 메모장.",
-        tech: ["File System API", "TextDecoder", "LocalStorage"]
+        desc: "Lightweight Notepad",
+        tech: ["File System API", "LocalStorage"]
       },
       {
         id: "text-converter",
-        title: "텍스트 종합 변환기",
+        title: "텍스트 변환기",
         file: "text-converter.html",
         category: "text",
         catName: "Text / Util",
         image: "assets/text-converter.jpg",
-        desc: "케이스 변환(camel, snake 등), URL/Base64/Hex 인코딩, 공백 정리, 유니코드 스타일 올인원 변환.",
-        tech: ["TextEncoder", "Live Mode", "Regex Parser"]
+        desc: "케이스 변환(camel, snake 등)",
+        tech: ["Live Mode", "Regex Parser"]
       },
       {
         id: "mini-calculator",
-        title: "미니 공학 계산기",
+        title: "미니 계산기",
         file: "mini-calculator.html",
         category: "utility",
         catName: "Math",
         image: "assets/mini-calculator.jpg",
-        desc: "Desmos 스타일 수식 직접 입력, 암시적 곱셈 및 미완성 괄호 자동 보정, 공학 함수, 히스토리 테이프.",
-        tech: ["Implicit Math Parser", "Thin Space", "Ans Tape"]
+        desc: "Desmos 스타일 수식 직접 입력.",
+        tech: ["Implicit Math Parser", "Ans Tape"]
       }
     ];
 
@@ -792,6 +830,7 @@
     const curtainDeck = document.getElementById("curtainDeck");
     const editorialContent = document.getElementById("editorialContent");
     const headlineDivider = document.getElementById("headlineDivider");
+    const statusPill = document.getElementById("statusPill");
     const statusDot = document.getElementById("statusDot");
     const statusText = document.getElementById("statusText");
     const toolGrid = document.getElementById("toolGrid");
@@ -799,7 +838,6 @@
     const toolSearchInput = document.getElementById("toolSearchInput");
     const filterTabs = document.querySelectorAll(".filter-tab");
     const themeToggleBtn = document.getElementById("themeToggleBtn");
-    const themeLabel = document.getElementById("themeLabel");
 
     // --- Physics Spring Engine Simulation ---
     // Matches temp.md framer-motion: { stiffness: 65, damping: 22, mass: 0.5 }
@@ -852,11 +890,14 @@
         `;
 
         card.addEventListener("click", (e) => {
-          // If curtain is spread, clicking a card opens the tool!
-          if (isSpreadActive) {
-            e.stopPropagation();
-            window.location.href = item.file;
+          e.stopPropagation();
+          // If curtain is not fully spread, any card click opens the curtain
+          if (!isSpreadActive) {
+            targetProgress = 1;
+            return;
           }
+          // If curtain is spread, clicking a card opens the tool!
+          window.location.href = item.file;
         });
 
         curtainDeck.appendChild(card);
@@ -907,10 +948,12 @@
       const wasSpreadActive = isSpreadActive;
       isSpreadActive = progress > 0.65;
       if (wasSpreadActive !== isSpreadActive) {
-        statusDot.classList.toggle("active", isSpreadActive);
-        statusText.textContent = isSpreadActive
-          ? "카드를 클릭하여 도구 실행 (Click to Launch)"
-          : "스크롤하거나 클릭하여 도구 펼치기";
+        if (statusDot) statusDot.classList.toggle("active", isSpreadActive);
+        if (statusText) {
+          statusText.textContent = isSpreadActive
+            ? "Click to Close"
+            : "Click to Open";
+        }
       }
 
       // 1. Center Editorial Text Transform
@@ -990,16 +1033,22 @@
       targetProgress = targetProgress > 0.5 ? 0 : 1;
     });
 
-    // Wheel handling directly on curtain stage
+    if (statusPill) {
+      statusPill.addEventListener("click", (e) => {
+        e.stopPropagation();
+        targetProgress = targetProgress > 0.5 ? 0 : 1;
+      });
+    }
+
+    // Wheel handling directly on curtain stage: scroll down to expand, scroll up to close
     curtainStage.addEventListener(
       "wheel",
       (e) => {
-        const delta = e.deltaY * 0.0025;
-        const next = Math.min(1, Math.max(0, targetProgress + delta));
-
-        if ((e.deltaY > 0 && targetProgress < 1) || (e.deltaY < 0 && targetProgress > 0)) {
-          e.preventDefault();
-          targetProgress = next;
+        e.preventDefault();
+        if (e.deltaY > 15) {
+          targetProgress = 1;
+        } else if (e.deltaY < -15) {
+          targetProgress = 0;
         }
       },
       { passive: false }
@@ -1097,7 +1146,6 @@
     function initTheme() {
       const saved = localStorage.getItem("mini_tools_theme") || "dark";
       document.documentElement.setAttribute("data-theme", saved);
-      updateThemeLabel(saved);
     }
 
     function toggleTheme() {
@@ -1105,12 +1153,8 @@
       const next = cur === "dark" ? "light" : "dark";
       document.documentElement.setAttribute("data-theme", next);
       localStorage.setItem("mini_tools_theme", next);
-      updateThemeLabel(next);
     }
 
-    function updateThemeLabel(theme) {
-      themeLabel.textContent = theme === "dark" ? "라이트" : "다크";
-    }
 
     themeToggleBtn.addEventListener("click", toggleTheme);
 
@@ -1120,14 +1164,12 @@
     initCurtainCards();
     renderToolGrid();
 
-    // Start with closed curtain and smoothly open briefly to showcase interaction
+    // Start with closed curtain as default
+    targetProgress = 0;
+    progress = 0;
     requestAnimationFrame((t) => {
       lastTime = t;
       requestAnimationFrame(renderLoop);
-      // Automatically unveil curtain softly after initial mount
-      setTimeout(() => {
-        targetProgress = 1;
-      }, 350);
     });
   </script>
 </body>

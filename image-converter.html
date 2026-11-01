@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>이미지 대기열 일괄 변환 및 크기 조절</title>
+  <title>이미지 일괄 변환 및 크기 조절</title>
   <style>
     :root {
       --bg: #f8fafc;
@@ -18,7 +19,12 @@
       --danger: #ef4444;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
     body {
       background-color: var(--bg);
       color: var(--text);
@@ -64,7 +70,7 @@
       border-radius: 16px;
       padding: 24px;
       margin-bottom: 20px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
     }
 
     .step-header {
@@ -141,7 +147,9 @@
       color: var(--text-muted);
     }
 
-    input[type="file"] { display: none; }
+    input[type="file"] {
+      display: none;
+    }
 
     .queue-list {
       margin-top: 16px;
@@ -221,7 +229,8 @@
       color: #334155;
     }
 
-    select, input[type="range"] {
+    select,
+    input[type="range"] {
       height: 42px;
       padding: 0 12px;
       border: 1px solid var(--border);
@@ -272,8 +281,14 @@
       transition: background 0.15s;
     }
 
-    .btn-action:hover { background: var(--primary-hover); }
-    .btn-action:disabled { background: #94a3b8; cursor: not-allowed; }
+    .btn-action:hover {
+      background: var(--primary-hover);
+    }
+
+    .btn-action:disabled {
+      background: #94a3b8;
+      cursor: not-allowed;
+    }
 
     .result-list {
       margin-top: 16px;
@@ -324,192 +339,197 @@
     }
   </style>
 </head>
+
 <body>
 
-<div class="wrapper">
-  <header>
-    <div class="tool-badge">IMAGE TOOL</div>
-    <h1>이미지 대기열 일괄 변환 및 크기 조절</h1>
-    <div class="desc">여러 디렉터리에서 이미지를 차례대로 추가한 뒤 한꺼번에 변환합니다.</div>
-  </header>
+  <div class="wrapper">
+    <header>
+      <div class="tool-badge">IMAGE TOOL</div>
+      <h1>이미지 변환 및 크기 조절</h1>
+      <div class="desc">이미지를 차례대로 추가한 뒤 일괄 변환.</div>
+    </header>
 
-  <div class="card">
-    <div class="step-header">
-      <div class="step-left">
-        <span class="step-num">01</span>
-        <h2 class="step-title">파일 적재 대기열 (<span id="queueCount">0</span>개)</h2>
-      </div>
-      <button class="btn-clear" id="clearBtn" style="display: none;">전체 비우기</button>
-    </div>
-    
-    <div class="dropzone" id="dropzone">
-      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-      <div class="dropzone-text">이미지 파일 추가 (클릭 또는 드래그 앤 드롭)</div>
-      <div class="dropzone-sub">다른 폴더의 파일들을 반복해서 여기에 계속 추가할 수 있습니다</div>
-      <input type="file" id="fileInput" multiple accept="image/*">
-    </div>
-
-    <div class="queue-list" id="queueList"></div>
-  </div>
-
-  <div class="card">
-    <div class="step-header">
-      <div class="step-left">
-        <span class="step-num">02</span>
-        <h2 class="step-title">출력 옵션</h2>
-      </div>
-    </div>
-
-    <div class="form-grid">
-      <div class="form-group">
-        <label for="formatSelect">출력 형식</label>
-        <select id="formatSelect">
-          <option value="image/webp">WebP</option>
-          <option value="image/jpeg">JPG</option>
-          <option value="image/png">PNG</option>
-        </select>
+    <div class="card">
+      <div class="step-header">
+        <div class="step-left">
+          <span class="step-num">01</span>
+          <h2 class="step-title">파일 적재 대기열 (<span id="queueCount">0</span>개)</h2>
+        </div>
+        <button class="btn-clear" id="clearBtn" style="display: none;">전체 비우기</button>
       </div>
 
-      <div class="form-group" id="qualityBox">
-        <label for="qualityRange">품질 (%) · JPG / WebP</label>
-        <div class="range-wrap">
-          <input type="range" id="qualityRange" min="10" max="100" value="85" step="5">
-          <span class="range-val" id="qualityVal">85%</span>
+      <div class="dropzone" id="dropzone">
+        <svg viewBox="0 0 24 24">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="17 8 12 3 7 8" />
+          <line x1="12" y1="3" x2="12" y2="15" />
+        </svg>
+        <div class="dropzone-text">파일 추가 (클릭 또는 드래그 앤 드롭)</div>
+        <div class="dropzone-sub">다른 폴더의 파일들을 반복해서 여기에 계속 추가할 수 있습니다</div>
+        <input type="file" id="fileInput" multiple accept="image/*">
+      </div>
+
+      <div class="queue-list" id="queueList"></div>
+    </div>
+
+    <div class="card">
+      <div class="step-header">
+        <div class="step-left">
+          <span class="step-num">02</span>
+          <h2 class="step-title">출력 옵션</h2>
         </div>
       </div>
 
-      <div class="form-group full">
-        <label for="scaleRange">크기 조절 비율 (%)</label>
-        <div class="range-wrap">
-          <input type="range" id="scaleRange" min="10" max="100" value="50" step="5">
-          <span class="range-val" id="scaleVal">50%</span>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="formatSelect">출력 형식</label>
+          <select id="formatSelect">
+            <option value="image/webp">WebP</option>
+            <option value="image/jpeg">JPG</option>
+            <option value="image/png">PNG</option>
+          </select>
+        </div>
+
+        <div class="form-group" id="qualityBox">
+          <label for="qualityRange">품질 (%) · JPG / WebP</label>
+          <div class="range-wrap">
+            <input type="range" id="qualityRange" min="10" max="100" value="85" step="5">
+            <span class="range-val" id="qualityVal">85%</span>
+          </div>
+        </div>
+
+        <div class="form-group full">
+          <label for="scaleRange">크기 조절 비율 (%)</label>
+          <div class="range-wrap">
+            <input type="range" id="scaleRange" min="10" max="100" value="50" step="5">
+            <span class="range-val" id="scaleVal">50%</span>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <button class="btn-action" id="convertBtn" disabled>
-    <span>대기열 일괄 변환하기</span>
-  </button>
+    <button class="btn-action" id="convertBtn" disabled>
+      <span>대기열 일괄 변환하기</span>
+    </button>
 
-  <div class="card" id="resultCard" style="display: none; margin-top: 20px;">
-    <div class="step-header">
-      <div class="step-left">
-        <span class="step-num">03</span>
-        <h2 class="step-title">변환 결과</h2>
+    <div class="card" id="resultCard" style="display: none; margin-top: 20px;">
+      <div class="step-header">
+        <div class="step-left">
+          <span class="step-num">03</span>
+          <h2 class="step-title">변환 결과</h2>
+        </div>
       </div>
+      <div class="result-list" id="resultList"></div>
     </div>
-    <div class="result-list" id="resultList"></div>
   </div>
-</div>
 
-<script>
-  const fileInput = document.getElementById('fileInput');
-  const dropzone = document.getElementById('dropzone');
-  const queueList = document.getElementById('queueList');
-  const queueCount = document.getElementById('queueCount');
-  const clearBtn = document.getElementById('clearBtn');
-  const formatSelect = document.getElementById('formatSelect');
-  const qualityRange = document.getElementById('qualityRange');
-  const qualityVal = document.getElementById('qualityVal');
-  const qualityBox = document.getElementById('qualityBox');
-  const scaleRange = document.getElementById('scaleRange');
-  const scaleVal = document.getElementById('scaleVal');
-  const convertBtn = document.getElementById('convertBtn');
-  const resultCard = document.getElementById('resultCard');
-  const resultList = document.getElementById('resultList');
+  <script>
+    const fileInput = document.getElementById('fileInput');
+    const dropzone = document.getElementById('dropzone');
+    const queueList = document.getElementById('queueList');
+    const queueCount = document.getElementById('queueCount');
+    const clearBtn = document.getElementById('clearBtn');
+    const formatSelect = document.getElementById('formatSelect');
+    const qualityRange = document.getElementById('qualityRange');
+    const qualityVal = document.getElementById('qualityVal');
+    const qualityBox = document.getElementById('qualityBox');
+    const scaleRange = document.getElementById('scaleRange');
+    const scaleVal = document.getElementById('scaleVal');
+    const convertBtn = document.getElementById('convertBtn');
+    const resultCard = document.getElementById('resultCard');
+    const resultList = document.getElementById('resultList');
 
-  // 적재된 파일 대기열
-  let fileQueue = [];
+    // 적재된 파일 대기열
+    let fileQueue = [];
 
-  dropzone.addEventListener('click', () => {
-    fileInput.value = '';
-    fileInput.click();
-  });
-
-  dropzone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    dropzone.classList.add('dragover');
-  });
-
-  dropzone.addEventListener('dragleave', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    dropzone.classList.remove('dragover');
-  });
-
-  dropzone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    dropzone.classList.remove('dragover');
-    if (e.dataTransfer && e.dataTransfer.files.length > 0) {
-      appendFiles(e.dataTransfer.files);
-    }
-  });
-
-  fileInput.addEventListener('change', (e) => {
-    if (e.target.files && e.target.files.length > 0) {
-      appendFiles(e.target.files);
-    }
-  });
-
-  qualityRange.addEventListener('input', (e) => {
-    qualityVal.textContent = `${e.target.value}%`;
-  });
-
-  scaleRange.addEventListener('input', (e) => {
-    scaleVal.textContent = `${e.target.value}%`;
-  });
-
-  formatSelect.addEventListener('change', (e) => {
-    const isPng = e.target.value === 'image/png';
-    qualityBox.style.opacity = isPng ? '0.4' : '1';
-    qualityRange.disabled = isPng;
-  });
-
-  clearBtn.addEventListener('click', () => {
-    fileQueue = [];
-    updateQueueUI();
-  });
-
-  function appendFiles(files) {
-    const validImages = Array.from(files).filter(file => {
-      return file.type.startsWith('image/') || /\.(jpe?g|png|webp|gif|bmp|avif)$/i.test(file.name);
+    dropzone.addEventListener('click', () => {
+      fileInput.value = '';
+      fileInput.click();
     });
 
-    if (validImages.length === 0) return;
-
-    // 대기열에 순차적으로 추가 (누적)
-    validImages.forEach(file => {
-      fileQueue.push(file);
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropzone.classList.add('dragover');
     });
 
-    updateQueueUI();
-  }
+    dropzone.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropzone.classList.remove('dragover');
+    });
 
-  function removeQueueItem(index) {
-    fileQueue.splice(index, 1);
-    updateQueueUI();
-  }
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropzone.classList.remove('dragover');
+      if (e.dataTransfer && e.dataTransfer.files.length > 0) {
+        appendFiles(e.dataTransfer.files);
+      }
+    });
 
-  function updateQueueUI() {
-    queueCount.textContent = fileQueue.length;
-    queueList.innerHTML = '';
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files.length > 0) {
+        appendFiles(e.target.files);
+      }
+    });
 
-    if (fileQueue.length === 0) {
-      clearBtn.style.display = 'none';
-      convertBtn.disabled = true;
-      return;
+    qualityRange.addEventListener('input', (e) => {
+      qualityVal.textContent = `${e.target.value}%`;
+    });
+
+    scaleRange.addEventListener('input', (e) => {
+      scaleVal.textContent = `${e.target.value}%`;
+    });
+
+    formatSelect.addEventListener('change', (e) => {
+      const isPng = e.target.value === 'image/png';
+      qualityBox.style.opacity = isPng ? '0.4' : '1';
+      qualityRange.disabled = isPng;
+    });
+
+    clearBtn.addEventListener('click', () => {
+      fileQueue = [];
+      updateQueueUI();
+    });
+
+    function appendFiles(files) {
+      const validImages = Array.from(files).filter(file => {
+        return file.type.startsWith('image/') || /\.(jpe?g|png|webp|gif|bmp|avif)$/i.test(file.name);
+      });
+
+      if (validImages.length === 0) return;
+
+      // 대기열에 순차적으로 추가 (누적)
+      validImages.forEach(file => {
+        fileQueue.push(file);
+      });
+
+      updateQueueUI();
     }
 
-    clearBtn.style.display = 'inline-block';
-    convertBtn.disabled = false;
+    function removeQueueItem(index) {
+      fileQueue.splice(index, 1);
+      updateQueueUI();
+    }
 
-    fileQueue.forEach((file, idx) => {
-      const item = document.createElement('div');
-      item.className = 'queue-item';
-      item.innerHTML = `
+    function updateQueueUI() {
+      queueCount.textContent = fileQueue.length;
+      queueList.innerHTML = '';
+
+      if (fileQueue.length === 0) {
+        clearBtn.style.display = 'none';
+        convertBtn.disabled = true;
+        return;
+      }
+
+      clearBtn.style.display = 'inline-block';
+      convertBtn.disabled = false;
+
+      fileQueue.forEach((file, idx) => {
+        const item = document.createElement('div');
+        item.className = 'queue-item';
+        item.innerHTML = `
         <div class="queue-info">
           <span class="queue-name">${escapeHtml(file.name)}</span>
           <span class="queue-size">(${formatBytes(file.size)})</span>
@@ -517,81 +537,81 @@
         <button class="queue-remove" title="제거" data-index="${idx}">&times;</button>
       `;
 
-      item.querySelector('.queue-remove').addEventListener('click', (e) => {
-        const targetIdx = parseInt(e.target.getAttribute('data-index'), 10);
-        removeQueueItem(targetIdx);
-      });
-
-      queueList.appendChild(item);
-    });
-  }
-
-  convertBtn.addEventListener('click', async () => {
-    if (fileQueue.length === 0) return;
-
-    convertBtn.disabled = true;
-    convertBtn.textContent = '처리 중...';
-    resultList.innerHTML = '';
-    resultCard.style.display = 'block';
-
-    const format = formatSelect.value;
-    const quality = parseInt(qualityRange.value, 10) / 100;
-    const scale = parseInt(scaleRange.value, 10) / 100;
-    const ext = format === 'image/jpeg' ? 'jpg' : format.split('/')[1];
-
-    for (let i = 0; i < fileQueue.length; i++) {
-      const file = fileQueue[i];
-      try {
-        const bitmap = await createImageBitmap(file);
-        const targetWidth = Math.max(1, Math.round(bitmap.width * scale));
-        const targetHeight = Math.max(1, Math.round(bitmap.height * scale));
-
-        const canvas = document.createElement('canvas');
-        canvas.width = targetWidth;
-        canvas.height = targetHeight;
-        const ctx = canvas.getContext('2d');
-
-        if (format === 'image/jpeg') {
-          ctx.fillStyle = '#FFFFFF';
-          ctx.fillRect(0, 0, targetWidth, targetHeight);
-        }
-
-        ctx.drawImage(bitmap, 0, 0, targetWidth, targetHeight);
-
-        await new Promise((resolve) => {
-          canvas.toBlob((blob) => {
-            const baseName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
-            const outputName = `${baseName}_${Math.round(scale * 100)}p.${ext}`;
-            const downloadUrl = URL.createObjectURL(blob);
-
-            renderResultItem({
-              name: outputName,
-              origSize: file.size,
-              newSize: blob.size,
-              origRes: `${bitmap.width}×${bitmap.height}`,
-              newRes: `${targetWidth}×${targetHeight}`,
-              url: downloadUrl
-            });
-            resolve();
-          }, format, quality);
+        item.querySelector('.queue-remove').addEventListener('click', (e) => {
+          const targetIdx = parseInt(e.target.getAttribute('data-index'), 10);
+          removeQueueItem(targetIdx);
         });
 
-      } catch (err) {
-        renderResultError(file.name, err.message);
-      }
+        queueList.appendChild(item);
+      });
     }
 
-    convertBtn.disabled = false;
-    convertBtn.textContent = '대기열 일괄 변환하기';
-  });
+    convertBtn.addEventListener('click', async () => {
+      if (fileQueue.length === 0) return;
 
-  function renderResultItem(data) {
-    const diff = ((1 - data.newSize / data.origSize) * 100).toFixed(1);
-    const sign = diff > 0 ? `-${diff}%` : `+${Math.abs(diff)}%`;
+      convertBtn.disabled = true;
+      convertBtn.textContent = '처리 중...';
+      resultList.innerHTML = '';
+      resultCard.style.display = 'block';
 
-    const el = document.createElement('div');
-    el.className = 'result-item';
-    el.innerHTML = `
+      const format = formatSelect.value;
+      const quality = parseInt(qualityRange.value, 10) / 100;
+      const scale = parseInt(scaleRange.value, 10) / 100;
+      const ext = format === 'image/jpeg' ? 'jpg' : format.split('/')[1];
+
+      for (let i = 0; i < fileQueue.length; i++) {
+        const file = fileQueue[i];
+        try {
+          const bitmap = await createImageBitmap(file);
+          const targetWidth = Math.max(1, Math.round(bitmap.width * scale));
+          const targetHeight = Math.max(1, Math.round(bitmap.height * scale));
+
+          const canvas = document.createElement('canvas');
+          canvas.width = targetWidth;
+          canvas.height = targetHeight;
+          const ctx = canvas.getContext('2d');
+
+          if (format === 'image/jpeg') {
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, targetWidth, targetHeight);
+          }
+
+          ctx.drawImage(bitmap, 0, 0, targetWidth, targetHeight);
+
+          await new Promise((resolve) => {
+            canvas.toBlob((blob) => {
+              const baseName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+              const outputName = `${baseName}_${Math.round(scale * 100)}p.${ext}`;
+              const downloadUrl = URL.createObjectURL(blob);
+
+              renderResultItem({
+                name: outputName,
+                origSize: file.size,
+                newSize: blob.size,
+                origRes: `${bitmap.width}×${bitmap.height}`,
+                newRes: `${targetWidth}×${targetHeight}`,
+                url: downloadUrl
+              });
+              resolve();
+            }, format, quality);
+          });
+
+        } catch (err) {
+          renderResultError(file.name, err.message);
+        }
+      }
+
+      convertBtn.disabled = false;
+      convertBtn.textContent = '대기열 일괄 변환하기';
+    });
+
+    function renderResultItem(data) {
+      const diff = ((1 - data.newSize / data.origSize) * 100).toFixed(1);
+      const sign = diff > 0 ? `-${diff}%` : `+${Math.abs(diff)}%`;
+
+      const el = document.createElement('div');
+      el.className = 'result-item';
+      el.innerHTML = `
       <div class="result-info">
         <div class="result-name">${escapeHtml(data.name)}</div>
         <div class="result-meta">
@@ -601,33 +621,34 @@
       </div>
       <a class="download-btn" href="${data.url}" download="${data.name}">다운로드</a>
     `;
-    resultList.appendChild(el);
-  }
+      resultList.appendChild(el);
+    }
 
-  function renderResultError(fileName, msg) {
-    const el = document.createElement('div');
-    el.className = 'result-item';
-    el.innerHTML = `
+    function renderResultError(fileName, msg) {
+      const el = document.createElement('div');
+      el.className = 'result-item';
+      el.innerHTML = `
       <div class="result-info">
         <div class="result-name" style="color: #ef4444;">${escapeHtml(fileName)} 처리 실패</div>
         <div class="result-meta">${escapeHtml(msg)}</div>
       </div>
     `;
-    resultList.appendChild(el);
-  }
+      resultList.appendChild(el);
+    }
 
-  function formatBytes(bytes) {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-  }
+    function formatBytes(bytes) {
+      if (bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
 
-  function escapeHtml(str) {
-    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  }
-</script>
+    function escapeHtml(str) {
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+  </script>
 
 </body>
+
 </html>
